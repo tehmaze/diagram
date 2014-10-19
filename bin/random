@@ -1,0 +1,6 @@
+#!/bin/bash
+
+DIFF=$[RANDOM]
+for x in $(jot $1 2>/dev/null || seq $1); do
+    echo $[RANDOM-DIFF]
+done
