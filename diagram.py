@@ -572,13 +572,11 @@ class VerticalBarGraph(BarGraph):
                 y = y + 1 if y else y
                 self.screen[(x, y)] = self.blocks[frac]
         else:
-            for y in range(full):
-                yr = self.screen.size.y - y
-                self.screen[(x, yr)] = self.blocks[-1]
+            for y in range(self.size.y, self.size.y - full - 1, -1):
+                self.screen[(x, y)] = self.blocks[-1]
             if frac:
-                y = y + 1 if y else y
-                yr = self.screen.size.y - y
-                self.screen[(x, yr)] = self.blocks[frac]
+                y = self.size.y - full - 1
+                self.screen[(x, y)] = self.blocks[frac]
 
     @property
     def scale(self):
