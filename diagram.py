@@ -360,13 +360,16 @@ class Graph(object):
     Base class for graphs.
     '''
 
-    def __init__(self, size, points, option):
+    def __init__(self, size, option):
         self.size = size
-        self.points = points
         self.option = option
 
+        # Internal cycle duty counter
+        self.cycle = 0L
+        self.lines = 0L
         self.term = Terminal()
 
+    def update(self, points):
         if np is None:
             if self.option.function:
                 warnings.warn('numpy not available, function ignored')
@@ -473,6 +476,10 @@ class Graph(object):
 
             yield Point((x, y))
 
+    @property
+    def maximum_points(self):
+        raise NotImplementedError()
+
     def render(self, stream):
         '''
         Render the graph to the selected output stream.
@@ -531,27 +538,13 @@ class AxisGraph(Graph):
               (0x04, 0x20),
               (0x40, 0x80))
 
-    def __init__(self, size, points, option):
-        super(AxisGraph, self).__init__(size, points, option)
+    def __init__(self, size, option):
+        super(AxisGraph, self).__init__(size, option)
 
         self.size = Point((
             size.x or self.term.width,
             size.y or 10
         ))
-        self.screen = AxisGraphScreen(self.size)
-
-        # Plot lines between the points
-        prev = Point((0, self.null))
-        for curr in self.normalised:
-            for point in self.line(prev, curr):
-                self.set(point)
-            prev = curr
-        
-        zero = int(self.null / 4)  # Zero crossing
-        if self.size.y > 1:
-            self.set_text(Point((0, zero)), '0')
-            self.set_text(Point((0, 0)), self.human(self.maximum))
-            self.set_text(Point((0, self.size.y - 1)), self.human(self.minimum))
 
     def render(self, stream):
         encoding = self.option.encoding or self.term.encoding
@@ -561,7 +554,11 @@ class AxisGraph(Graph):
         else:
             ramp = None
 
+        if self.cycle >= 1 and self.lines:
+            stream.write(self.term.csi('cuu', self.lines))
+
         zero = int(self.null / 4)  # Zero crossing
+        lines = 0
         for y in range(self.screen.size.y):
             if y == zero and self.size.y > 1:
                 stream.write(self.term.csi('smul'))
@@ -593,7 +590,11 @@ class AxisGraph(Graph):
                 stream.write(self.term.csi('sgr0'))
 
             stream.write('\n')
+            lines += 1
+        stream.flush()
 
+        self.cycle = self.cycle + 1
+        self.lines = lines
 
     @property
     def normalised(self):
@@ -622,6 +623,13 @@ class AxisGraph(Graph):
                 dx * x,
                 min(oy, oy - y),
             ))
+
+    @property
+    def maximum_points(self):
+        if hasattr(self, 'screen'):
+            return self.screen.width
+        else:
+            return self.size.x
 
     @property
     def null(self):
@@ -660,6 +668,24 @@ class AxisGraph(Graph):
         if not self.canvas.get(y):
             del self.screen[y]
 
+    def update(self, points):
+        super(AxisGraph, self).update(points)
+
+        self.screen = AxisGraphScreen(self.size)
+
+        # Plot lines between the points
+        prev = Point((0, self.null))
+        for curr in self.normalised:
+            for point in self.line(prev, curr):
+                self.set(point)
+            prev = curr
+        
+        zero = int(self.null / 4)  # Zero crossing
+        if self.size.y > 1:
+            self.set_text(Point((0, zero)), '0')
+            self.set_text(Point((0, 0)), self.human(self.maximum))
+            self.set_text(Point((0, self.size.y - 1)), self.human(self.minimum))
+
 
 class BarGraph(Graph):
     '''
@@ -677,8 +703,8 @@ class HorizontalBarGraph(BarGraph):
     Horizontal bar graph.
     '''
 
-    def __init__(self, size, points, option):
-        super(BarGraph, self).__init__(size, points, option)
+    def __init__(self, size, option):
+        super(BarGraph, self).__init__(size, option)
 
         if size.y:
             warnings.warn('Ignoring height on horizontal bar graph')
@@ -695,16 +721,9 @@ class HorizontalBarGraph(BarGraph):
 
         # Select block characters
         if self.option.reverse:
-            self.blocks = map(
-                lambda b: self.term.csi_wrap(unichr(b), 'rev'),
-                H_BAR[1],
-            )
+            self.blocks = H_BAR[1]
         else:
-            self.blocks = map(unichr, H_BAR[0])
-
-        # Plot bars for each line
-        for y, size in enumerate(self.normalised):
-            self.bar(size, y)
+            self.blocks = H_BAR[0]
 
     def bar(self, size, y):
         full, frac = divmod(self.round(size * 8), 8)
@@ -713,17 +732,24 @@ class HorizontalBarGraph(BarGraph):
         if self.option.reverse:
             for x in range(full):
                 xr = self.screen.size.x - x
-                self.screen[(xr, y)] = ord(self.blocks[-1])
+                self.screen[(xr, y)] = self.blocks[-1]
             if frac:
                 x = x + 1 if x else x
                 xr = self.screen.size.x - x
-                self.screen[(xr, y)] = ord(self.blocks[frac])
+                self.screen[(xr, y)] = self.blocks[frac]
         else:
             for x in range(full):
-                self.screen[(x, y)] = ord(self.blocks[-1])
+                self.screen[(x, y)] = self.blocks[-1]
             if frac:
                 x = x + 1 if x else x
-                self.screen[(x, y)] = ord(self.blocks[frac])
+                self.screen[(x, y)] = self.blocks[frac]
+
+    @property
+    def maximum_points(self):
+        if self.option.height:
+            return self.option.height
+        else:
+            return 10
 
     @property
     def scale(self):
@@ -739,6 +765,12 @@ class HorizontalBarGraph(BarGraph):
         else:
             ramp = None
 
+
+        if self.cycle >= 1:
+            stream.write(self.term.csi('cuu', self.lines))
+
+        lines = 0
+        stream.write(self.term.csi('el'))
         if self.option.legend:
             minimum_text = self.human(self.minimum)
             maximum_text = self.human(self.maximum)
@@ -749,15 +781,16 @@ class HorizontalBarGraph(BarGraph):
                 ''.join([minimum_text, maximum_text]),
                 'bold',
             ))
+            stream.write('\n')
+            lines += 1
 
         for y in range(self.screen.size.y):
             prev_color = ''
+            stream.write(self.term.csi('el'))
             for x in range(self.screen.size.x):
                 if ramp:
                     curr_color = ramp[x]
-                    if self.option.reverse:
-                        stream.write(curr_color)
-                    elif curr_color != prev_color:
+                    if not self.option.reverse and curr_color != prev_color:
                         stream.write(curr_color)
                         prev_color = curr_color
 
@@ -765,9 +798,11 @@ class HorizontalBarGraph(BarGraph):
                 if point in self.screen:
                     value = self.screen[point]
                     if isinstance(value, int):
+                        if self.option.reverse:
+                            stream.write(curr_color)
+                            stream.write(self.term.csi('rev'))
                         stream.write(unichr(value).encode(encoding))
                     else:
-                        #stream.write(unicode(value).encode(encoding))
                         stream.write(self.term.csi('sgr0'))
                         stream.write(self.term.csi_wrap(
                             unicode(value).encode(encoding),
@@ -775,13 +810,31 @@ class HorizontalBarGraph(BarGraph):
                         ))
                         if ramp:
                             stream.write(curr_color)
-
+                        if self.option.reverse:
+                            stream.write(self.term.csi('rev'))
                 else:
                     stream.write(' ')
 
             if ramp:
                 stream.write(self.term.csi('sgr0'))
             stream.write('\n')
+            lines += 1
+
+        self.cycle = self.cycle + 1
+        self.lines = lines
+
+    def update(self, points):
+        super(HorizontalBarGraph, self).update(points)
+        
+        # Clear screen
+        self.screen = Screen(
+            self.screen.size.copy(),
+            extend_y=True,
+        )
+
+        # Plot bars for each line
+        for y, size in enumerate(self.normalised):
+            self.bar(size, y)
 
 
 class VerticalBarGraph(BarGraph):
@@ -789,50 +842,17 @@ class VerticalBarGraph(BarGraph):
     Vertical bar graph.
     '''
 
-    def __init__(self, size, points, option):
-        super(BarGraph, self).__init__(size, points, option)
+    def __init__(self, size, option):
+        super(BarGraph, self).__init__(size, option)
 
         if size.x:
             warnings.warn('Ignoring width on horizontal bar graph')
 
-        maximum_width = self.term.width
-        if len(points) > maximum_width:
-            self.points = points[-maximum_width:]
-
-        # If the legend is enabled, and we have sufficient room to shift the
-        # columns to the right, we do so.
-        elif len(points) < (maximum_width - 6) and self.option.legend:
-            for x in range(6):
-                self.points.insert(0, min(self.points))
-
-        self.size = Point((
-            len(self.points),
-            size.y or 10,
-        ))
-
-        self.screen = Screen(
-            Point((1, self.size.y)),
-            extend_x=True,
-            extend_y=True,
-        )
-
         # Select block characters
         if self.option.reverse:
-            self.blocks = map(
-                lambda b: self.term.csi_wrap(unichr(b), 'rev'),
-                V_BAR[1],
-            )
+            self.blocks = V_BAR[1]
         else:
-            self.blocks = map(unichr, V_BAR[0])
-
-        # Plot bars for each line
-        for x, size in enumerate(self.normalised):
-            self.bar(size, x)
-
-        # Plot legend, if there is sufficient space
-        if self.size.y > 1 and self.option.legend:
-            self.set_text(Point((0, 0)), self.human(self.maximum))
-            self.set_text(Point((0, self.size.y - 1)), self.human(self.minimum))
+            self.blocks = V_BAR[0]
 
 
     def bar(self, size, x):
@@ -841,16 +861,20 @@ class VerticalBarGraph(BarGraph):
         y = 0
         if self.option.reverse:
             for y in range(full):
-                self.screen[(x, y)] = ord(self.blocks[-1])
+                self.screen[(x, y)] = self.blocks[-1]
             if frac:
                 y = y + 1 if y else y
-                self.screen[(x, y)] = ord(self.blocks[frac])
+                self.screen[(x, y)] = self.blocks[-frac]
         else:
             for y in range(self.size.y, self.size.y - full - 1, -1):
-                self.screen[(x, y)] = ord(self.blocks[-1])
+                self.screen[(x, y)] = self.blocks[-1]
             if frac:
                 y = self.size.y - full - 1
-                self.screen[(x, y)] = ord(self.blocks[frac])
+                self.screen[(x, y)] = self.blocks[frac]
+
+    @property
+    def maximum_points(self):
+        return self.term.width
 
     @property
     def scale(self):
@@ -866,6 +890,10 @@ class VerticalBarGraph(BarGraph):
         else:
             ramp = []
 
+        if self.cycle >= 1:
+            stream.write(self.term.csi('cuu', self.lines))
+
+        lines = 0
         for y in range(self.size.y):
             if ramp:
                 stream.write(ramp[y])
@@ -874,7 +902,15 @@ class VerticalBarGraph(BarGraph):
                 if point in self.screen:
                     value = self.screen[point]
                     if isinstance(value, int):
-                        stream.write(unichr(value).encode(encoding))
+                        if self.option.reverse:
+                            if ramp:
+                                stream.write(ramp[y])
+                            stream.write(self.term.csi_wrap(
+                                unichr(value),
+                                'rev'
+                            ))
+                        else:
+                            stream.write(unichr(value).encode(encoding))
                     else:
                         stream.write(self.term.csi('sgr0'))
                         stream.write(self.term.csi_wrap(
@@ -890,6 +926,48 @@ class VerticalBarGraph(BarGraph):
             if ramp:
                 stream.write(self.term.csi('sgr0'))
             stream.write('\n')
+            lines += 1
+
+        self.cycle = self.cycle + 1
+        self.lines = lines
+
+    def update(self, points):
+        if self.option.reverse:
+            points = points[::-1]
+
+        maximum_width = self.maximum_points
+        if len(points) > maximum_width:
+            spoints = points[-maximum_points:]
+
+        # If the legend is enabled, and we have sufficient room to shift the
+        # columns to the right, we do so.
+        elif len(points) < (maximum_width - 6) and self.option.legend and self.cycle == 0:
+            for x in range(6):
+                points.insert(0, min(points))
+
+        super(VerticalBarGraph, self).update(points)
+
+        self.size = Point((
+            len(self.points),
+            self.option.size.y or 10,
+        ))
+
+        self.screen = Screen(
+            Point((1, self.size.y)),
+            extend_x=True,
+            extend_y=True,
+        )
+
+        # Plot bars for each line
+        for x, size in enumerate(self.normalised):
+            self.bar(size, x)
+
+        # Plot legend, if there is sufficient space
+        if self.size.y > 1 and self.option.legend:
+            self.set_text(Point((0, 0)), self.human(self.maximum))
+            self.set_text(Point((0, self.size.y - 1)), self.human(self.minimum))
+
+
 
 
 def usage_function(parser):
@@ -1003,6 +1081,16 @@ def run():
 
     group = parser.add_argument_group('optional input and output arguments')
     group.add_argument(
+        '-b', '--batch',
+        default=False, action='store_true',
+        help='batch mode (default: no)',
+    )
+    group.add_argument(
+        '-s', '--sleep',
+        default=0, type=float,
+        help='batch poll sleep time (default: none)',
+    )
+    group.add_argument(
         '-i', '--input',
         default='-', metavar='file',
         help='input file (default: stdin)',
@@ -1041,28 +1129,55 @@ def run():
 
     option.encoding = option.encoding or Terminal().encoding
 
-    points = []
-    for line in istream:
-        for point in line.split():
-            try:
-                points.append(float(point))
-            except ValueError:
-                pass
-
     if option.mode == 'g':
-        engine = AxisGraph(option.size, points, option)
+        engine = AxisGraph(option.size, option)
 
     elif option.mode == 'h':
-        engine = HorizontalBarGraph(option.size, points, option)
+        engine = HorizontalBarGraph(option.size, option)
 
     elif option.mode == 'v':
-        engine = VerticalBarGraph(option.size, points, option)
+        engine = VerticalBarGraph(option.size, option)
 
     else:
         parser.error('invalid mode')
         return 1
 
-    engine.render(ostream)
+    if option.batch:
+        import select
+        import time
+
+        option.sleep = max(0.01, option.sleep)
+        points = [0.0]
+        while True:
+            try:
+                if select.select([istream.fileno()], [], [], option.sleep):
+                    for point in istream.readline().split():
+                        try:
+                            points.append(float(point))
+                        except ValueError:
+                            pass
+
+                    # We need at least two data points to draw a graph
+                    if len(points) > 0:
+                        points = points[-engine.maximum_points:]
+                        engine.update(points)
+                        engine.render(ostream)
+                        time.sleep(option.sleep)
+
+            except KeyboardInterrupt:
+                break
+
+    else:
+        points = []
+        for line in istream:
+            for point in line.split():
+                try:
+                    points.append(float(point))
+                except ValueError:
+                    pass
+
+        engine.update(points)
+        engine.render(ostream)
 
 
 if __name__ == '__main__':
