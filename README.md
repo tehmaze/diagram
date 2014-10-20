@@ -1,6 +1,6 @@
 # diagram
 
-Text diagrams (using Python).
+Text mode diagrams using UTF-8 characters and fancy colors (using Python).
 
 ## Features
 
