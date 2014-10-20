@@ -5,7 +5,7 @@ import os
 setup(
     name='diagram',
     version='0.1',
-    description='Draw UTF-8 diagrams on the console',
+    description='Text mode diagrams using UTF-8 characters and fancy colors',
     author='Wijnand Modderman-Lenstra',
     author_email='maze@pyth0n.org',
     py_modules=['diagram'],
