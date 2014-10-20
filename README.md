@@ -2,6 +2,25 @@
 
 Text diagrams (using Python).
 
+## Features
+
+ * Axial graphs
+ * Horizontal and vertical bar graphs
+ * 256 color mode with various pre-defined palettes
+ * UTF-8 text graphics
+
+## Installation
+
+It's recommended to use pip to install/update.
+
+To install:
+
+    $ sudo pip install diagram
+
+To update:
+
+    $ sudo pip install -U diagram
+
 ## Examples
 
 Pictures say more than a thousand words.
@@ -14,9 +33,17 @@ Pictures say more than a thousand words.
 
 ![Horizontal bar graph](doc/horizontalbar.png)
 
+Drawing characters used:
+
+    ▏ ▎ ▍ ▌ ▋ ▊ ▉ █
+
 ### Vertical bar graph
 
 ![Vertical bar graph](doc/verticalbar.png)
+
+Drawing characters used:
+
+    ▁ ▂ ▃ ▄ ▅ ▆ ▇ █
 
 
 ## Usage
