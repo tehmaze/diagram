@@ -1147,7 +1147,7 @@ def run():
         import time
 
         option.sleep = max(0.01, option.sleep)
-        points = [0.0]
+        points = []
         while True:
             try:
                 if select.select([istream.fileno()], [], [], option.sleep):
@@ -1158,7 +1158,7 @@ def run():
                             pass
 
                     # We need at least two data points to draw a graph
-                    if len(points) > 0:
+                    if len(points) > 1:
                         points = points[-engine.maximum_points:]
                         engine.update(points)
                         engine.render(ostream)
