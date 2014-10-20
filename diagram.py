@@ -408,7 +408,7 @@ class AxisGraph(Graph):
         ry = self.round(point.y)
 
         item = Point((rx >> 1, min(ry >> 2, self.size.y)))
-        self.screen[item] |= self.pixels[ry % 4][rx % 2]
+        self.screen[item] |= self.pixels[ry & 3][rx & 1]
 
     def unset(self, point):
         if not isinstance(point, Point):
@@ -420,7 +420,7 @@ class AxisGraph(Graph):
             return
 
         if isinstance(self.screen[y][x], (int, long)):
-            self.screen[(x, y)] &= ~self.pixels[y % 4][x % 2]
+            self.screen[(x, y)] &= ~self.pixels[y & 3][x & 1]
 
         else:
             del self.screen[(x, y)]
