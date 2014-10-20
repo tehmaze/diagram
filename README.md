@@ -51,9 +51,9 @@ Drawing characters used:
 
 Use `diagram --help` for documentation:
 
-    usage: diagram [-h] [-G] [-H] [-V] [-a] [-A] [-c] [-C] [-p PALETTE]
-                   [-x characters] [-y characters] [-r] [-i file] [-o file]
-                   [-e ENCODING]
+    usage: diagram [-h] [-G] [-H] [-V] [-a] [-A] [-c] [-C] [-l] [-L]
+                   [-f function] [-p palette] [-x characters] [-y characters]
+                   [-r] [-b] [-s SLEEP] [-i file] [-o file] [-e ENCODING]
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -69,6 +69,10 @@ Use `diagram --help` for documentation:
       -A, --no-axis         don't draw axis
       -c, --color           use colors (default: yes)
       -C, --no-color        don't use colors
+      -l, --legend          draw y-axis legend (default: yes)
+      -L, --no-legend       don't draw y-axis legend
+      -f function, --function function
+                            curve manipulation function, use "help" for a list
       -p palette, --palette palette
                             palette name, use "help" for a list
       -x characters, --width characters
@@ -78,12 +82,34 @@ Use `diagram --help` for documentation:
       -r, --reverse         reverse draw graph
 
     optional input and output arguments:
+      -b, --batch           batch mode (default: no)
+      -s SLEEP, --sleep SLEEP
+                            batch poll sleep time (default: none)
       -i file, --input file
                             input file (default: stdin)
       -o file, --output file
                             output file (default: stdout)
       -e ENCODING, --encoding ENCODING
                             output encoding (default: auto)
+
+# `--function ...`
+
+The parameter can be just the function name or the function name with arguments,
+for example:
+
+    diagram -f log
+
+or, with an argument:
+
+    diagram -f log:e
+
+## log
+
+Symmetrical logarithmic scale.
+
+## smooth
+
+Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
 
 # `--palette ...`
 
