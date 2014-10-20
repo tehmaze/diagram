@@ -92,7 +92,7 @@ Use `diagram --help` for documentation:
       -e ENCODING, --encoding ENCODING
                             output encoding (default: auto)
 
-# `--function ...`
+### `--function ...`
 
 The parameter can be just the function name or the function name with arguments,
 for example:
@@ -103,32 +103,32 @@ or, with an argument:
 
     diagram -f log:e
 
-## log
+#### log
 
 Symmetrical logarithmic scale.
 
-## smooth
+#### smooth
 
 Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
 
-# `--palette ...`
+### `--palette ...`
 
-## default / spectrum
+#### default / spectrum
 
 ![Palette Spectrum](doc/palette-spectrum.png)
 
-## grey
+#### grey
 
 ![Palette Grey](doc/palette-grey.png)
 
-## red
+#### red
 
 ![Palette Red](doc/palette-red.png)
 
-## green
+#### green
 
 ![Palette Green](doc/palette-green.png)
 
-## blue
+#### blue
 
 ![Palette Blue](doc/palette-blue.png)
