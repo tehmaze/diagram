@@ -417,7 +417,6 @@ class Graph(object):
         Run the filter function on the provided points.
         '''
         if not self.option.function:
-            print 'no function'
             return points
 
         if np is None:
@@ -547,21 +546,22 @@ class AxisGraph(Graph):
             for point in self.line(prev, curr):
                 self.set(point)
             prev = curr
-
-    def render(self, stream):
-        encoding = self.option.encoding or self.term.encoding
-
+        
         zero = int(self.null / 4)  # Zero crossing
         if self.size.y > 1:
             self.set_text(Point((0, zero)), '0')
             self.set_text(Point((0, 0)), self.human(self.maximum))
             self.set_text(Point((0, self.size.y - 1)), self.human(self.minimum))
 
+    def render(self, stream):
+        encoding = self.option.encoding or self.term.encoding
+
         if self.option.color:
             ramp = self.color_ramp(self.size.y)[::-1]
         else:
             ramp = None
 
+        zero = int(self.null / 4)  # Zero crossing
         for y in range(self.screen.size.y):
             if y == zero and self.size.y > 1:
                 stream.write(self.term.csi('smul'))
@@ -576,10 +576,10 @@ class AxisGraph(Graph):
                         stream.write(unichr(self.base + value).encode(encoding))
                     else:
                         stream.write(self.term.csi('sgr0'))
-                        stream.write(self.term.csi('bold'))
-                        stream.write(unicode(value).encode(encoding))
-                        # There's no capability to just turn off bold, meh.
-                        stream.write(self.term.csi('sgr0'))
+                        stream.write(self.term.csi_wrap(
+                            unicode(value).encode(encoding),
+                            'bold'
+                        ))
                         if y == zero and self.size.y > 1:
                             stream.write(self.term.csi('smul'))
                         if ramp:
@@ -713,17 +713,17 @@ class HorizontalBarGraph(BarGraph):
         if self.option.reverse:
             for x in range(full):
                 xr = self.screen.size.x - x
-                self.screen[(xr, y)] = self.blocks[-1]
+                self.screen[(xr, y)] = ord(self.blocks[-1])
             if frac:
                 x = x + 1 if x else x
                 xr = self.screen.size.x - x
-                self.screen[(xr, y)] = self.blocks[frac]
+                self.screen[(xr, y)] = ord(self.blocks[frac])
         else:
             for x in range(full):
-                self.screen[(x, y)] = self.blocks[-1]
+                self.screen[(x, y)] = ord(self.blocks[-1])
             if frac:
                 x = x + 1 if x else x
-                self.screen[(x, y)] = self.blocks[frac]
+                self.screen[(x, y)] = ord(self.blocks[frac])
 
     @property
     def scale(self):
@@ -738,6 +738,17 @@ class HorizontalBarGraph(BarGraph):
                 ramp = ramp[::-1]
         else:
             ramp = None
+
+        if self.option.legend:
+            minimum_text = self.human(self.minimum)
+            maximum_text = self.human(self.maximum)
+            minimum_text = minimum_text.ljust(
+                self.screen.width - len(maximum_text)
+            )
+            stream.write(self.term.csi_wrap(
+                ''.join([minimum_text, maximum_text]),
+                'bold',
+            ))
 
         for y in range(self.screen.size.y):
             prev_color = ''
@@ -756,7 +767,14 @@ class HorizontalBarGraph(BarGraph):
                     if isinstance(value, int):
                         stream.write(unichr(value).encode(encoding))
                     else:
-                        stream.write(unicode(value).encode(encoding))
+                        #stream.write(unicode(value).encode(encoding))
+                        stream.write(self.term.csi('sgr0'))
+                        stream.write(self.term.csi_wrap(
+                            unicode(value).encode(encoding),
+                            'bold'
+                        ))
+                        if ramp:
+                            stream.write(curr_color)
 
                 else:
                     stream.write(' ')
@@ -780,6 +798,12 @@ class VerticalBarGraph(BarGraph):
         maximum_width = self.term.width
         if len(points) > maximum_width:
             self.points = points[-maximum_width:]
+
+        # If the legend is enabled, and we have sufficient room to shift the
+        # columns to the right, we do so.
+        elif len(points) < (maximum_width - 6) and self.option.legend:
+            for x in range(6):
+                self.points.insert(0, min(self.points))
 
         self.size = Point((
             len(self.points),
@@ -805,22 +829,28 @@ class VerticalBarGraph(BarGraph):
         for x, size in enumerate(self.normalised):
             self.bar(size, x)
 
+        # Plot legend, if there is sufficient space
+        if self.size.y > 1 and self.option.legend:
+            self.set_text(Point((0, 0)), self.human(self.maximum))
+            self.set_text(Point((0, self.size.y - 1)), self.human(self.minimum))
+
+
     def bar(self, size, x):
         full, frac = divmod(self.round(size * 8), 8)
 
         y = 0
         if self.option.reverse:
             for y in range(full):
-                self.screen[(x, y)] = self.blocks[-1]
+                self.screen[(x, y)] = ord(self.blocks[-1])
             if frac:
                 y = y + 1 if y else y
-                self.screen[(x, y)] = self.blocks[frac]
+                self.screen[(x, y)] = ord(self.blocks[frac])
         else:
             for y in range(self.size.y, self.size.y - full - 1, -1):
-                self.screen[(x, y)] = self.blocks[-1]
+                self.screen[(x, y)] = ord(self.blocks[-1])
             if frac:
                 y = self.size.y - full - 1
-                self.screen[(x, y)] = self.blocks[frac]
+                self.screen[(x, y)] = ord(self.blocks[frac])
 
     @property
     def scale(self):
@@ -836,11 +866,7 @@ class VerticalBarGraph(BarGraph):
         else:
             ramp = []
 
-        if self.size.y > 1:
-            self.set_text(Point((0, 0)), self.human(self.maximum))
-            self.set_text(Point((0, self.size.y - 1)), self.human(self.minimum))
-
-        for y in range(self.screen.size.y):
+        for y in range(self.size.y):
             if ramp:
                 stream.write(ramp[y])
             for x in range(self.screen.size.x):
@@ -850,7 +876,13 @@ class VerticalBarGraph(BarGraph):
                     if isinstance(value, int):
                         stream.write(unichr(value).encode(encoding))
                     else:
-                        stream.write(unicode(value).encode(encoding))
+                        stream.write(self.term.csi('sgr0'))
+                        stream.write(self.term.csi_wrap(
+                            unicode(value).encode(encoding),
+                            'bold'
+                        ))
+                        if ramp:
+                            stream.write(ramp[y])
 
                 else:
                     stream.write(' ')
