@@ -6,7 +6,8 @@ Text diagrams (using Python).
 
  * Axial graphs
  * Horizontal and vertical bar graphs
- * 256 color mode with various pre-defined palettes
+ * Supports both 3 bit (16 color) and 8 bit (256 color) mode colors with
+   various pre-defined palettes (see below)
  * UTF-8 text graphics
 
 ## Installation
@@ -83,3 +84,25 @@ Use `diagram --help` for documentation:
                             output file (default: stdout)
       -e ENCODING, --encoding ENCODING
                             output encoding (default: auto)
+
+# `--palette ...`
+
+## default / spectrum
+
+![Palette Spectrum](doc/palette-spectrum.png)
+
+## grey
+
+![Palette Grey](doc/palette-grey.png)
+
+## red
+
+![Palette Red](doc/palette-red.png)
+
+## green
+
+![Palette Green](doc/palette-green.png)
+
+## blue
+
+![Palette Blue](doc/palette-blue.png)
