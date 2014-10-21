@@ -12,9 +12,13 @@ import curses
 import locale
 import math
 import os
+import re
 import sys
 import warnings
 
+
+# Delimiters for key-value pairs
+RE_KEY_VALUE = re.compile(r'[\s=:]+')
 
 # Optionally import numpy for faster arithmetic and curve filtering functions
 try:
@@ -165,7 +169,6 @@ def filter_symlog(y, base=10.0):
     logs = np.log(np.abs(y) / log_base)
     return sign * logs
 
-
 def filter_savitzky_golay(y, window_size=5, order=2, deriv=0, rate=1):
     '''
     Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
@@ -202,7 +205,6 @@ def filter_savitzky_golay(y, window_size=5, order=2, deriv=0, rate=1):
         minimum,
         maximum,
     )
-
 
 # Graph filter functions
 FUNCTION = dict(
@@ -369,7 +371,9 @@ class Graph(object):
         self.lines = 0L
         self.term = Terminal()
 
-    def update(self, points):
+    def update(self, points, values=None):
+        self.values = values or [None] * len(points)
+
         if np is None:
             if self.option.function:
                 warnings.warn('numpy not available, function ignored')
@@ -423,7 +427,6 @@ class Graph(object):
             return points
 
         if np is None:
-            print 'no numpy'
             raise ImportError('numpy is not available')
 
         if ':' in self.option.function:
@@ -695,7 +698,7 @@ class BarGraph(Graph):
     @property
     def normalised(self):
         for point in self.points:
-            yield (point - self.minimum) / self.extents * self.scale
+            yield (point - self.minimum) / self.extents * float(self.scale)
 
 
 class HorizontalBarGraph(BarGraph):
@@ -729,20 +732,32 @@ class HorizontalBarGraph(BarGraph):
         full, frac = divmod(self.round(size * 8), 8)
 
         x = 0
+        o = self.offset
         if self.option.reverse:
             for x in range(full):
-                xr = self.screen.size.x - x
+                xr = self.screen.size.x - x - o
                 self.screen[(xr, y)] = self.blocks[-1]
             if frac:
                 x = x + 1 if x else x
-                xr = self.screen.size.x - x
+                xr = self.screen.size.x - x - o
                 self.screen[(xr, y)] = self.blocks[frac]
         else:
             for x in range(full):
-                self.screen[(x, y)] = self.blocks[-1]
+                xr = x + o
+                self.screen[(xr, y)] = self.blocks[-1]
             if frac:
                 x = x + 1 if x else x
-                self.screen[(x, y)] = self.blocks[frac]
+                xr = x + o
+                self.screen[(xr, y)] = self.blocks[frac]
+
+        if self.option.keys and self.values[y] is not None:
+            value = self.values[y]
+            if self.option.reverse:
+                point = Point((self.size.x - o, y))
+                value = value.ljust(self.offset)
+            else:
+                point = Point((0, y))
+            self.set_text(point, value)
 
     @property
     def maximum_points(self):
@@ -752,19 +767,29 @@ class HorizontalBarGraph(BarGraph):
             return 10
 
     @property
+    def offset(self):
+        try:
+            return max(map(len, filter(None, self.values)))
+        except ValueError:
+            return 0
+
+    @property
     def scale(self):
-        return float(self.screen.width)
+        size = self.screen.width - self.offset
+        if size <= 0:
+            raise ValueError('Terminal not wide enough to display data')
+        else:
+            return size
 
     def render(self, stream):
         encoding = self.option.encoding or self.term.encoding()
 
         if self.option.color:
-            ramp = self.color_ramp(self.screen.size.x)
+            ramp = self.color_ramp(self.scale)
             if self.option.reverse:
                 ramp = ramp[::-1]
         else:
             ramp = None
-
 
         if self.cycle >= 1:
             stream.write(self.term.csi('cuu', self.lines))
@@ -772,24 +797,41 @@ class HorizontalBarGraph(BarGraph):
         lines = 0
         stream.write(self.term.csi('el'))
         if self.option.legend:
+            offset = self.offset
             minimum_text = self.human(self.minimum)
             maximum_text = self.human(self.maximum)
             minimum_text = minimum_text.ljust(
-                self.screen.width - len(maximum_text)
+                self.scale - len(maximum_text)
             )
+            
+            padding_text = ''
+            if not self.option.reverse:
+                padding_text = ' ' * offset
+            
             stream.write(self.term.csi_wrap(
-                ''.join([minimum_text, maximum_text]),
+                ''.join([
+                    padding_text,
+                    minimum_text,
+                    maximum_text,
+                ]),
                 'bold',
             ))
             stream.write('\n')
             lines += 1
 
+        o = self.offset
         for y in range(self.screen.size.y):
             prev_color = ''
             stream.write(self.term.csi('el'))
             for x in range(self.screen.size.x):
                 if ramp:
-                    curr_color = ramp[x]
+                    try:
+                        if self.option.reverse:
+                            curr_color = ramp[x]
+                        else:
+                            curr_color = ramp[x - o]
+                    except IndexError:
+                        curr_color = self.term.csi('sgr0')
                     if not self.option.reverse and curr_color != prev_color:
                         stream.write(curr_color)
                         prev_color = curr_color
@@ -823,8 +865,8 @@ class HorizontalBarGraph(BarGraph):
         self.cycle = self.cycle + 1
         self.lines = lines
 
-    def update(self, points):
-        super(HorizontalBarGraph, self).update(points)
+    def update(self, points, values=None):
+        super(HorizontalBarGraph, self).update(points, values)
         
         # Clear screen
         self.screen = Screen(
@@ -931,7 +973,7 @@ class VerticalBarGraph(BarGraph):
         self.cycle = self.cycle + 1
         self.lines = lines
 
-    def update(self, points):
+    def update(self, points, values):
         if self.option.reverse:
             points = points[::-1]
 
@@ -1003,7 +1045,15 @@ def run():
     '''
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=(
+            'Text mode diagrams using UTF-8 characters and fancy colors.'
+        ),
+        epilog='''
+    (1): only works for the horizontal bar graph, the first argument is the key
+    and the second value is the data point.
+''',
+    )
 
     group = parser.add_argument_group('optional drawing mode')
     group.add_argument(
@@ -1086,6 +1136,11 @@ def run():
         help='batch mode (default: no)',
     )
     group.add_argument(
+        '-k', '--keys',
+        default=False, action='store_true',
+        help='input are key-value pairs (default: no) (1)',
+    )
+    group.add_argument(
         '-s', '--sleep',
         default=0, type=float,
         help='batch poll sleep time (default: none)',
@@ -1143,6 +1198,9 @@ def run():
         return 1
 
     if option.batch:
+        if option.keys:
+            return parser.error("--batch and --keys are mutually exclusive")
+
         import select
         import time
 
@@ -1168,15 +1226,31 @@ def run():
                 break
 
     else:
-        points = []
+        points = []  # Data points
+        values = []  # Legend values
         for line in istream:
-            for point in line.split():
+            if option.keys:
+                data = RE_KEY_VALUE.split(line.strip(), 1)
+                if len(data) == 1:
+                    point = data[0]
+                    value = None
+                else:
+                    value, point = data[:]
+
                 try:
                     points.append(float(point))
+                    values.append(value)
                 except ValueError:
                     pass
 
-        engine.update(points)
+            else:
+                for point in line.strip().split():
+                    try:
+                        points.append(float(point))
+                    except ValueError:
+                        pass
+
+        engine.update(points, values)
         engine.render(ostream)
 
 

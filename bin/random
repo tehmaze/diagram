@@ -1,6 +1,21 @@
 #!/bin/bash
 
+WORD=/usr/share/dict/words
 DIFF=$[RANDOM]
+if [ -n "$2" ]; then
+    KEYS=1
+else
+    KEYS=0
+fi
+
+word() {
+    perl -e 'srand; rand($.) < 1 && ($line = $_) while <>; print $line;' \
+        $WORD | tr -d \\n
+}
+
 for x in $(jot $1 2>/dev/null || seq $1); do
-    echo $[RANDOM-DIFF]
+    case $KEYS in
+        0) echo $[RANDOM-DIFF];;
+        1) word; echo " $[RANDOM-DIFF]";;
+    esac
 done
