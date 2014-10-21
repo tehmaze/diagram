@@ -671,8 +671,8 @@ class AxisGraph(Graph):
         if not self.canvas.get(y):
             del self.screen[y]
 
-    def update(self, points):
-        super(AxisGraph, self).update(points)
+    def update(self, points, values=None):
+        super(AxisGraph, self).update(points, values)
 
         self.screen = AxisGraphScreen(self.size)
 
@@ -973,7 +973,7 @@ class VerticalBarGraph(BarGraph):
         self.cycle = self.cycle + 1
         self.lines = lines
 
-    def update(self, points, values):
+    def update(self, points, values=None):
         if self.option.reverse:
             points = points[::-1]
 
