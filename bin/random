@@ -16,6 +16,6 @@ word() {
 for x in $(jot $1 2>/dev/null || seq $1); do
     case $KEYS in
         0) echo $[RANDOM-DIFF];;
-        1) word; echo " $[RANDOM-DIFF]";;
+        1) echo -n "$[RANDOM-DIFF] "; word; echo;;
     esac
 done

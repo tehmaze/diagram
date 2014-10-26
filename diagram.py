@@ -13,12 +13,14 @@ import locale
 import math
 import os
 import re
+import select
 import sys
+import time
 import warnings
 
 
 # Delimiters for key-value pairs
-RE_KEY_VALUE = re.compile(r'[\s=:]+')
+RE_VALUE_KEY = re.compile(r'[\s=:]+')
 
 # Optionally import numpy for faster arithmetic and curve filtering functions
 try:
@@ -107,7 +109,7 @@ class Terminal(object):
             )
         except:
             return None
-        
+
     def color(self, index):
         '''
         Get the escape sequence for indexed color ``index``. The ``index`` is
@@ -371,6 +373,56 @@ class Graph(object):
         self.lines = 0L
         self.term = Terminal()
 
+    def consume(self, istream, ostream, batch=False):
+        points = []  # Data points
+        values = []  # Legend values
+
+        if batch:
+            sleep = max(0.01, self.option.sleep)
+            fd = istream.fileno()
+            while True:
+                try:
+                    if select.select([fd], [], [], sleep):
+                        try:
+                            point, value = self.consume_line(istream.readline())
+                        except ValueError:
+                            continue
+                        else:
+                            points.append(point)
+                            values.append(value)
+
+                        if len(points) > 1:
+                            maximum_points = self.maximum_points
+                            points = points[-maximum_points:]
+                            values = points[-maximum_points:]
+                            self.update(points, values)
+                            self.render(ostream)
+
+                        time.sleep(sleep)
+
+                except KeyboardInterrupt:
+                    break
+
+        else:
+            for line in istream:
+                try:
+                    point, value = self.consume_line(line)
+                except ValueError:
+                    pass
+                else:
+                    points.append(point)
+                    values.append(value)
+
+            self.update(points, values)
+            self.render(ostream)
+
+    def consume_line(self, line):
+        data = RE_VALUE_KEY.split(line.strip(), 1)
+        if len(data) == 1:
+            return float(data[0]), None
+        else:
+            return float(data[0]), data[1].strip()
+
     def update(self, points, values=None):
         self.values = values or [None] * len(points)
 
@@ -629,10 +681,7 @@ class AxisGraph(Graph):
 
     @property
     def maximum_points(self):
-        if hasattr(self, 'screen'):
-            return self.screen.width
-        else:
-            return self.size.x
+        return self.size.x
 
     @property
     def null(self):
@@ -682,7 +731,7 @@ class AxisGraph(Graph):
             for point in self.line(prev, curr):
                 self.set(point)
             prev = curr
-        
+
         zero = int(self.null / 4)  # Zero crossing
         if self.size.y > 1:
             self.set_text(Point((0, zero)), '0')
@@ -803,11 +852,11 @@ class HorizontalBarGraph(BarGraph):
             minimum_text = minimum_text.ljust(
                 self.scale - len(maximum_text)
             )
-            
+
             padding_text = ''
             if not self.option.reverse:
                 padding_text = ' ' * offset
-            
+
             stream.write(self.term.csi_wrap(
                 ''.join([
                     padding_text,
@@ -867,7 +916,7 @@ class HorizontalBarGraph(BarGraph):
 
     def update(self, points, values=None):
         super(HorizontalBarGraph, self).update(points, values)
-        
+
         # Clear screen
         self.screen = Screen(
             self.screen.size.copy(),
@@ -1010,8 +1059,6 @@ class VerticalBarGraph(BarGraph):
             self.set_text(Point((0, self.size.y - 1)), self.human(self.minimum))
 
 
-
-
 def usage_function(parser):
     '''
     Shows usage and available curve functions.
@@ -1025,7 +1072,6 @@ def usage_function(parser):
 
     return 0
 
-
 def usage_palette(parser):
     '''
     Shows usage and available palettes.
@@ -1037,7 +1083,6 @@ def usage_palette(parser):
         print '    %-12s' % (palette,)
 
     return 0
-
 
 def run():
     '''
@@ -1197,61 +1242,7 @@ def run():
         parser.error('invalid mode')
         return 1
 
-    if option.batch:
-        if option.keys:
-            return parser.error("--batch and --keys are mutually exclusive")
-
-        import select
-        import time
-
-        option.sleep = max(0.01, option.sleep)
-        points = []
-        while True:
-            try:
-                if select.select([istream.fileno()], [], [], option.sleep):
-                    for point in istream.readline().split():
-                        try:
-                            points.append(float(point))
-                        except ValueError:
-                            pass
-
-                    # We need at least two data points to draw a graph
-                    if len(points) > 1:
-                        points = points[-engine.maximum_points:]
-                        engine.update(points)
-                        engine.render(ostream)
-                        time.sleep(option.sleep)
-
-            except KeyboardInterrupt:
-                break
-
-    else:
-        points = []  # Data points
-        values = []  # Legend values
-        for line in istream:
-            if option.keys:
-                data = RE_KEY_VALUE.split(line.strip(), 1)
-                if len(data) == 1:
-                    point = data[0]
-                    value = None
-                else:
-                    value, point = data[:]
-
-                try:
-                    points.append(float(point))
-                    values.append(value)
-                except ValueError:
-                    pass
-
-            else:
-                for point in line.strip().split():
-                    try:
-                        points.append(float(point))
-                    except ValueError:
-                        pass
-
-        engine.update(points, values)
-        engine.render(ostream)
+    engine.consume(istream, ostream, batch=option.batch)
 
 
 if __name__ == '__main__':
