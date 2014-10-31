@@ -83,6 +83,7 @@ Use `diagram --help` for documentation:
 
     optional input and output arguments:
       -b, --batch           batch mode (default: no)
+      -k, --keys            input are key-value pairs (default: no) (1)
       -s SLEEP, --sleep SLEEP
                             batch poll sleep time (default: none)
       -i file, --input file
@@ -91,6 +92,9 @@ Use `diagram --help` for documentation:
                             output file (default: stdout)
       -e ENCODING, --encoding ENCODING
                             output encoding (default: auto)
+
+    (1): only works for the horizontal bar graph, the first argument is the key
+    and the second value is the data point.
 
 ### `--function ...`
 
