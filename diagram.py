@@ -432,12 +432,16 @@ class Graph(object):
             self.points = points
             self.minimum = min(self.points)
             self.maximum = max(self.points)
-            self.extents = (self.maximum - self.minimum)
 
         else:
             self.points = self.apply_function(points)
             self.minimum = np.min(self.points)
             self.maximum = np.max(self.points)
+
+        if self.maximum == self.minimum:
+            self.extents = 1
+        else:
+            self.extents = (self.maximum - self.minimum)
             self.extents = (self.maximum - self.minimum)
 
     def color_ramp(self, size):
