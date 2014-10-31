@@ -9,7 +9,7 @@ setup(
     name='diagram',
     version='0.2.21.1',
     description='Text mode diagrams using UTF-8 characters and fancy colors',
-    long_description=read('README.txt'),
+    long_description=read('README.md'),
     url='https://github.com/tehmaze/diagram',
     author='Wijnand Modderman-Lenstra',
     author_email='maze@pyth0n.org',
