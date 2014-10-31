@@ -846,7 +846,7 @@ class VerticalBarGraph(BarGraph):
         super(BarGraph, self).__init__(size, option)
 
         if size.x:
-            warnings.warn('Ignoring width on horizontal bar graph')
+            warnings.warn('Ignoring width on vertical bar graph')
 
         # Select block characters
         if self.option.reverse:
