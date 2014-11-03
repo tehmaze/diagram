@@ -1,0 +1,3 @@
+include *.md
+include *.py
+recursive-include doc *.png
