@@ -22,6 +22,10 @@ To update:
 
     $ sudo pip install -U diagram
 
+To install from github:
+
+    $ sudo pip install git+https://github.com/tehmaze/diagram.git
+
 ## Examples
 
 Pictures say more than a thousand words.
