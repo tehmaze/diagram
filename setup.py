@@ -3,7 +3,7 @@ from setuptools import setup
 import os
 
 def read(filename):
-    return file(filename).read()
+    return open(filename).read()
 
 setup(
     name='diagram',

@@ -2,10 +2,14 @@
 Text mode diagrams using UTF-8 characters and fancy colors.
 '''
 
+from __future__ import print_function
+from __future__ import unicode_literals
+
 __author__ = 'Wijnand Modderman-Lenstra <maze@pyth0n.org>'
 __copyright__ = 'Copyright 2014, maze.io labs'
 __credits__ = ['Adam Tauber', 'Erik Rose', 'Jeff Quast', 'John-Paul Verkamp']
 __license__ = 'MIT'
+
 
 from collections import defaultdict
 import curses
@@ -18,6 +22,13 @@ import sys
 import time
 import warnings
 
+# fix for Python2
+try:
+    range = xrange
+    chr = unichr
+except NameError:
+    pass
+
 
 # Delimiters for key-value pairs
 RE_VALUE_KEY = re.compile(r'[\s=:]+')
@@ -29,10 +40,12 @@ except ImportError:
     np = None
 
 # Setup locale
+# Second argument should be a native str (bytes on python2, unicode on
+# python3)
 if sys.platform == 'darwin':
-    locale.setlocale(locale.LC_CTYPE, 'UTF-8')
+    locale.setlocale(locale.LC_CTYPE, str('UTF-8'))
 else:
-    locale.setlocale(locale.LC_ALL, '')
+    locale.setlocale(locale.LC_ALL, str(''))
 
 
 class Terminal(object):
@@ -134,7 +147,7 @@ class Terminal(object):
         '''
         value = curses.tigetstr(capname)
         if value is None:
-            return ''
+            return b''
         else:
             return curses.tparm(value, *args)
 
@@ -143,7 +156,7 @@ class Terminal(object):
         Returns a value wrapped in the selected Control Sequence Introducer
         and resets the attributes afterwards.
         '''
-        return u''.join([
+        return b''.join([
             self.csi(capname, *args),
             value,
             self.csi('sgr0'),
@@ -232,11 +245,11 @@ PALETTE = dict(
     },
     blue={
         0x010: (4, 12),
-        0x100: range(17, 22) + [12],
+        0x100: list(range(17, 22)) + [12],
     },
     grey={
         0x010: (8, 7, 15),
-        0x100: range(232, 257) + [15],
+        0x100: list(range(232, 257)) + [15],
     },
     spectrum={
         0x010: [14, 6, 2, 10, 11, 3, 9],
@@ -369,8 +382,8 @@ class Graph(object):
         self.option = option
 
         # Internal cycle duty counter
-        self.cycle = 0L
-        self.lines = 0L
+        self.cycle = 0
+        self.lines = 0
         self.term = Terminal()
 
     def consume(self, istream, ostream, batch=False):
@@ -493,7 +506,7 @@ class Graph(object):
             arguments = []
 
         # Resolve arguments
-        arguments = map(self._function_argument, arguments)
+        arguments = list(map(self._function_argument, arguments))
 
         # Resolve function
         filter_function = FUNCTION.get(function)
@@ -549,11 +562,7 @@ class Graph(object):
         '''
         Get an integer value for the input value.
         '''
-        if isinstance(value, (int, long)):
-            return value
-
-        else:
-            return long(round(value))
+        return int(value)
 
     def set_text(self, point, text):
         '''
@@ -629,11 +638,11 @@ class AxisGraph(Graph):
                 if point in self.screen:
                     value = self.screen[point]
                     if isinstance(value, int):
-                        stream.write(unichr(self.base + value).encode(encoding))
+                        stream.write(chr(self.base + value).encode(encoding))
                     else:
                         stream.write(self.term.csi('sgr0'))
                         stream.write(self.term.csi_wrap(
-                            unicode(value).encode(encoding),
+                            value.encode(encoding),
                             'bold'
                         ))
                         if y == zero and self.size.y > 1:
@@ -641,14 +650,14 @@ class AxisGraph(Graph):
                         if ramp:
                             stream.write(ramp[y])
                 else:
-                    stream.write(' ')
+                    stream.write(b' ')
 
             if y == zero and self.size.y > 1:
                 stream.write(self.term.csi('rmul'))
             if ramp:
                 stream.write(self.term.csi('sgr0'))
 
-            stream.write('\n')
+            stream.write(b'\n')
             lines += 1
         stream.flush()
 
@@ -715,7 +724,7 @@ class AxisGraph(Graph):
         if (x, y) not in self.screen:
             return
 
-        if isinstance(self.screen[y][x], (int, long)):
+        if isinstance(self.screen[y][x], int):
             self.screen[(x, y)] &= ~self.pixels[y & 3][x & 1]
 
         else:
@@ -822,7 +831,7 @@ class HorizontalBarGraph(BarGraph):
     @property
     def offset(self):
         try:
-            return max(map(len, filter(None, self.values)))
+            return max(map(len, (v for v in self.values if v)))
         except ValueError:
             return 0
 
@@ -896,11 +905,11 @@ class HorizontalBarGraph(BarGraph):
                         if self.option.reverse:
                             stream.write(curr_color)
                             stream.write(self.term.csi('rev'))
-                        stream.write(unichr(value).encode(encoding))
+                        stream.write(chr(value).encode(encoding))
                     else:
                         stream.write(self.term.csi('sgr0'))
                         stream.write(self.term.csi_wrap(
-                            unicode(value).encode(encoding),
+                            value.encode(encoding),
                             'bold'
                         ))
                         if ramp:
@@ -1001,15 +1010,15 @@ class VerticalBarGraph(BarGraph):
                             if ramp:
                                 stream.write(ramp[y])
                             stream.write(self.term.csi_wrap(
-                                unichr(value),
+                                chr(value),
                                 'rev'
                             ))
                         else:
-                            stream.write(unichr(value).encode(encoding))
+                            stream.write(chr(value).encode(encoding))
                     else:
                         stream.write(self.term.csi('sgr0'))
                         stream.write(self.term.csi_wrap(
-                            unicode(value).encode(encoding),
+                            value.encode(encoding),
                             'bold'
                         ))
                         if ramp:
@@ -1068,11 +1077,11 @@ def usage_function(parser):
     Shows usage and available curve functions.
     '''
     parser.print_usage()
-    print ''
-    print 'available functions:'
+    print('')
+    print('available functions:')
     for function in sorted(FUNCTION):
         doc = FUNCTION[function].__doc__.strip().splitlines()[0]
-        print '    %-12s %s' % (function + ':', doc)
+        print('    %-12s %s' % (function + ':', doc))
 
     return 0
 
@@ -1081,10 +1090,10 @@ def usage_palette(parser):
     Shows usage and available palettes.
     '''
     parser.print_usage()
-    print ''
-    print 'available palettes:'
+    print('')
+    print('available palettes:')
     for palette in sorted(PALETTE):
-        print '    %-12s' % (palette,)
+        print('    %-12s' % (palette,))
 
     return 0
 
@@ -1227,7 +1236,10 @@ def run():
         istream = open(option.input, 'r')
 
     if option.output in ['-', 'stdout']:
-        ostream = sys.stdout
+        try:
+            ostream = sys.stdout.buffer
+        except AttributeError:
+            ostream = sys.stdout
     else:
         ostream = open(option.output, 'r')
 
