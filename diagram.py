@@ -1241,7 +1241,7 @@ def run():
         except AttributeError:
             ostream = sys.stdout
     else:
-        ostream = open(option.output, 'r')
+        ostream = open(option.output, 'wb')
 
     option.encoding = option.encoding or Terminal().encoding
 
