@@ -1,6 +1,4 @@
-'''
-Text mode diagrams using UTF-8 characters and fancy colors.
-'''
+"""Text mode diagrams using UTF-8 characters and fancy colors."""
 
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -49,41 +47,33 @@ else:
 
 
 class Terminal(object):
-    '''
-    Terminal manipulation.
-    '''
+
+    """Terminal manipulation."""
 
     def __init__(self):
+        """Initialize curses."""
         curses.setupterm()
 
     @property
     def colors(self):
-        '''
-        Get the number of colors supported by this terminal.
-        '''
+        """Get the number of colors supported by this terminal."""
         number = curses.tigetnum('colors') or 0
         return 16 if number == 8 else number
 
     @property
     def encoding(self):
-        '''
-        Get the current terminal encoding.
-        '''
+        """Get the current terminal encoding."""
         _, encoding = locale.getdefaultlocale()
         return encoding
 
     @property
     def height(self):
-        '''
-        Get the current terminal height.
-        '''
+        """Get the current terminal height."""
         return self.size[1]
 
     @property
     def size(self):
-        '''
-        Get the current terminal size.
-        '''
+        """Get the current terminal size."""
         for fd in range(3):
             cr = self._ioctl_GWINSZ(fd)
             if cr:
@@ -93,7 +83,7 @@ class Terminal(object):
                 fd = os.open(os.ctermid(), os.O_RDONLY)
                 cr = self._ioctl_GWINSZ(fd)
                 os.close(fd)
-            except:
+            except Exception:
                 pass
 
         if not cr:
@@ -104,34 +94,36 @@ class Terminal(object):
 
     @property
     def width(self):
-        '''
-        Get the current terminal width.
-        '''
+        """Get the current terminal width."""
         return self.size[0]
 
     def _ioctl_GWINSZ(self, fd):
-        '''
+        """Get terminal size using ``TIOCGWINSZ``.
+
         Internal function that will try to request the ``TIOCGWINSZ`` against
         the selected file descriptor ``fd``.
-        '''
+        """
         try:
-            import fcntl, termios, struct
+            import fcntl
+            import termios
+            import struct
             return struct.unpack(
                 'hh',
                 fcntl.ioctl(fd, termios.TIOCGWINSZ, '1234')
             )
-        except:
+        except Exception:
             return None
 
     def color(self, index):
-        '''
-        Get the escape sequence for indexed color ``index``. The ``index`` is
-        a color index in the 256 color space. The color space consists of:
+        """Get the escape sequence for indexed color ``index``.
+
+        The ``index`` is a color index in the 256 color space. The color space
+        consists of:
 
         * 0x00-0x0f: default EGA colors
         * 0x10-0xe7: 6x6x6 RGB cubes
         * 0xe8-0xff: gray scale ramp
-        '''
+        """
         if self.colors == 16:
             if index >= 8:
                 return self.csi('bold') + self.csi('setaf', index - 8)
@@ -141,10 +133,7 @@ class Terminal(object):
             return self.csi('setaf', index)
 
     def csi(self, capname, *args):
-        '''
-        Returns the escape sequence for the selected Control Sequence
-        Introducer.
-        '''
+        """Return the escape sequence for the selected Control Sequence."""
         value = curses.tigetstr(capname)
         if value is None:
             return b''
@@ -152,10 +141,7 @@ class Terminal(object):
             return curses.tparm(value, *args)
 
     def csi_wrap(self, value, capname, *args):
-        '''
-        Returns a value wrapped in the selected Control Sequence Introducer
-        and resets the attributes afterwards.
-        '''
+        """Return a value wrapped in the selected CSI and does a reset."""
         return b''.join([
             self.csi(capname, *args),
             value,
@@ -171,23 +157,21 @@ V_BAR = [(0x2581, 0x2582, 0x2583, 0x2584, 0x2585, 0x2586, 0x2587, 0x2588),
 
 
 def filter_symlog(y, base=10.0):
-    '''
-    Symmetrical logarithmic scale.
+    """Symmetrical logarithmic scale.
 
     Optional arguments:
 
     *base*:
         The base of the logarithm.
-    '''
+    """
     log_base = np.log(base)
     sign = np.sign(y)
     logs = np.log(np.abs(y) / log_base)
     return sign * logs
 
+
 def filter_savitzky_golay(y, window_size=5, order=2, deriv=0, rate=1):
-    '''
-    Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
-    '''
+    """Smooth (and optionally differentiate) with a Savitzky-Golay filter."""
     try:
         window_size = np.abs(np.int(window_size))
         order = np.abs(np.int(order))
@@ -269,11 +253,11 @@ PALETTE.update(dict(
 
 
 class Point(object):
-    '''
-    Holds a single, two-dimensional point.
-    '''
+
+    """Holds a single, two-dimensional point."""
 
     def __init__(self, coordinates):
+        """Point with ``(x, y)`` coordinates."""
         self.x = coordinates[0]
         self.y = coordinates[1]
 
@@ -281,16 +265,14 @@ class Point(object):
         return 'Point(%r, %r)' % (self.x, self.y)
 
     def copy(self):
-        '''
-        Returns a fresh copy of the current point.
-        '''
+        """Return a fresh copy of the current point."""
         return Point((self.x, self.y))
 
 
 class Screen(object):
-    '''
-    Off-screen render buffer.
-    '''
+
+    """Off-screen render buffer."""
+
     def __init__(self, size, encoding=None, extend_x=False, extend_y=False):
         if isinstance(size, Point):
             self.size = size.copy()
@@ -307,37 +289,29 @@ class Screen(object):
 
     @property
     def width(self):
-        '''
-        Get the buffer width.
-        '''
+        """Get the buffer width."""
         return self.size.x
 
     @property
     def height(self):
-        '''
-        Get the buffer height.
-        '''
+        """Get the buffer height."""
         return self.size.y
 
     def __contains__(self, point):
-        '''
-        Check if a point has a value.
-        '''
+        """Check if a point has a value."""
         if not isinstance(point, Point):
             point = Point(point)
 
-        if not point.y in self.canvas:
+        if point.y not in self.canvas:
             return False
         else:
             return point.x in self.canvas[point.y]
 
     def __repr__(self):
-        return '%s(%d, %d)' % (self.__class__.__name__, self.width, self.height)
+        return '%s(%d,%d)' % (self.__class__.__name__, self.width, self.height)
 
     def __setitem__(self, point, value):
-        '''
-        Set a point value.
-        '''
+        """Set a point value."""
         if not isinstance(point, Point):
             point = Point(point)
 
@@ -364,18 +338,15 @@ class Screen(object):
         self.canvas[point.y][point.x] = value
 
     def __getitem__(self, point):
-        '''
-        Get a point value or None.
-        '''
+        """Get a point value or None."""
         if not isinstance(point, Point):
             point = Point(point)
         return self.canvas[point.y][point.x]
 
 
 class Graph(object):
-    '''
-    Base class for graphs.
-    '''
+
+    """Base class for graphs."""
 
     def __init__(self, size, option):
         self.size = size
@@ -390,6 +361,7 @@ class Graph(object):
         self.screen = None
 
     def consume(self, istream, ostream, batch=False):
+        """Read points from istream and output to ostream."""
         points = []  # Data points
         values = []  # Legend values
 
@@ -400,7 +372,8 @@ class Graph(object):
                 try:
                     if select.select([fd], [], [], sleep):
                         try:
-                            point, value = self.consume_line(istream.readline())
+                            line = istream.readline()
+                            point, value = self.consume_line(line)
                         except ValueError:
                             continue
                         else:
@@ -433,6 +406,7 @@ class Graph(object):
             self.render(ostream)
 
     def consume_line(self, line):
+        """Consume data from a line."""
         data = RE_VALUE_KEY.split(line.strip(), 1)
         if len(data) == 1:
             return float(data[0]), None
@@ -441,9 +415,11 @@ class Graph(object):
 
     @property
     def scale(self):
+        """Graph scale."""
         return 1
 
     def update(self, points, values=None):
+        """Add a set of data points."""
         self.values = values or [None] * len(points)
 
         if np is None:
@@ -465,10 +441,9 @@ class Graph(object):
             self.extents = (self.maximum - self.minimum)
 
     def color_ramp(self, size):
-        '''
-        Generate a color ramp for the current screen height.
-        '''
-        color = PALETTE.get(self.option.palette, {}).get(self.term.colors, None)
+        """Generate a color ramp for the current screen height."""
+        color = PALETTE.get(self.option.palette, {})
+        color = color.get(self.term.colors, None)
         color_ramp = []
         if color is not None:
             ratio = len(color) / float(size)
@@ -478,9 +453,7 @@ class Graph(object):
         return color_ramp
 
     def human(self, size, base=1000, units=' kMGTZ'):
-        '''
-        Converts the input ``size`` to human readable, short form.
-        '''
+        """Convert the input ``size`` to human readable, short form."""
         sign = '+' if size >= 0 else '-'
         size = abs(size)
         if size < 1000:
@@ -496,9 +469,7 @@ class Graph(object):
         raise OverflowError
 
     def apply_function(self, points):
-        '''
-        Run the filter function on the provided points.
-        '''
+        """Run the filter function on the provided points."""
         if not self.option.function:
             return points
 
@@ -527,15 +498,14 @@ class Graph(object):
             return filter_function(np.array(list(points)), *arguments)
 
     def _function_argument(self, value):
+        """Resolve function, convert to float if not found."""
         if value in FUNCTION_CONSTANT:
             return FUNCTION_CONSTANT[value]
         else:
             return float(value)
 
     def line(self, p1, p2, resolution=1):
-        '''
-        Resolve the points to make a line between two points.
-        '''
+        """Resolve the points to make a line between two points."""
         xdiff = max(p1.x, p2.x) - min(p1.x, p2.x)
         ydiff = max(p1.y, p2.y) - min(p1.y, p2.y)
         xdir = [-1, 1][int(p1.x <= p2.x)]
@@ -557,24 +527,19 @@ class Graph(object):
 
     @property
     def maximum_points(self):
+        """Override in subclass."""
         raise NotImplementedError()
 
     def render(self, stream):
-        '''
-        Render the graph to the selected output stream.
-        '''
+        """Render the graph to the selected output stream."""
         raise NotImplementedError()
 
     def round(self, value):
-        '''
-        Get an integer value for the input value.
-        '''
+        """Get an integer value for the input value."""
         return int(value)
 
     def set_text(self, point, text):
-        '''
-        Set a text value in the screen canvas.
-        '''
+        """Set a text value in the screen canvas."""
         if not self.option.legend:
             return
 
@@ -586,25 +551,28 @@ class Graph(object):
 
 
 class AxisGraphScreen(Screen):
-    '''
-    Base class for axial graph buffers. The buffer size is larger than the
-    actual screen size, because we have 8 pixels per character. The number
-    of pixels per character is 2 horizontal and 4 vertical pixels.
-    '''
+
+    """Base class for axial graph buffers.
+
+    The buffer size is larger than the actual screen size, because we have 8
+    pixels per character. The number of pixels per character is 2 horizontal
+    and 4 vertical pixels.
+    """
 
     @property
     def width(self):
+        """Buffer width."""
         return self.size.x * 2
 
     @property
     def height(self):
+        """Buffer height."""
         return self.size.y * 4
 
 
 class AxisGraph(Graph):
-    '''
-    Base class for axial graphs.
-    '''
+
+    """Base class for axial graphs."""
 
     # Graph characters, using braille characters
     base = 0x2800
@@ -622,6 +590,7 @@ class AxisGraph(Graph):
         ))
 
     def render(self, stream):
+        """Render graph to stream."""
         encoding = self.option.encoding or self.term.encoding
 
         if self.option.color:
@@ -673,12 +642,14 @@ class AxisGraph(Graph):
 
     @property
     def normalised(self):
+        """Normalised data points."""
         if np is None:
             return self._normalised_python()
         else:
             return self._normalised_numpy()
 
     def _normalised_numpy(self):
+        """Normalised data points using numpy."""
         dx = (self.screen.width / float(len(self.points)))
         oy = (self.screen.height)
         points = np.array(self.points) - self.minimum
@@ -690,6 +661,7 @@ class AxisGraph(Graph):
             ))
 
     def _normalised_python(self):
+        """Normalised data points using pure Python."""
         dx = (self.screen.width / float(len(self.points)))
         oy = (self.screen.height)
         for x, point in enumerate(self.points):
@@ -701,10 +673,12 @@ class AxisGraph(Graph):
 
     @property
     def maximum_points(self):
+        """Maximum width."""
         return self.size.x
 
     @property
     def null(self):
+        """Zero crossing value."""
         if not self.option.axis:
             return -1
         else:
@@ -713,6 +687,7 @@ class AxisGraph(Graph):
             )
 
     def set(self, point):
+        """Set pixel at (x, y) point."""
         if not isinstance(point, Point):
             point = Point(point)
 
@@ -723,6 +698,7 @@ class AxisGraph(Graph):
         self.screen[item] |= self.pixels[ry & 3][rx & 1]
 
     def unset(self, point):
+        """Unset pixel at (x, y) point."""
         if not isinstance(point, Point):
             point = Point(point)
 
@@ -756,13 +732,13 @@ class AxisGraph(Graph):
         if self.size.y > 1:
             self.set_text(Point((0, zero)), '0')
             self.set_text(Point((0, 0)), self.human(self.maximum))
-            self.set_text(Point((0, self.size.y - 1)), self.human(self.minimum))
+            self.set_text(Point((0, self.size.y - 1)),
+                          self.human(self.minimum))
 
 
 class BarGraph(Graph):
-    '''
-    Base class for bar graphs.
-    '''
+
+    """Base class for bar graphs."""
 
     @property
     def normalised(self):
@@ -771,9 +747,8 @@ class BarGraph(Graph):
 
 
 class HorizontalBarGraph(BarGraph):
-    '''
-    Horizontal bar graph.
-    '''
+
+    """Horizontal bar graph."""
 
     def __init__(self, size, option):
         super(HorizontalBarGraph, self).__init__(size, option)
@@ -869,26 +844,19 @@ class HorizontalBarGraph(BarGraph):
             offset = self.offset
             minimum_text = self.human(self.minimum)
             maximum_text = self.human(self.maximum)
-            minimum_text = minimum_text.ljust(
-                self.scale - len(maximum_text)
-            )
+            minimum_text = minimum_text.ljust(self.scale - len(maximum_text))
 
             padding_text = ''
             if not self.option.reverse:
                 padding_text = ' ' * offset
 
             stream.write(self.term.csi_wrap(
-                ''.join([
-                    padding_text,
-                    minimum_text,
-                    maximum_text,
-                ]),
+                ''.join([padding_text, minimum_text, maximum_text]),
                 'bold',
             ))
             stream.write('\n')
             lines += 1
 
-        o = self.offset
         for y in range(self.screen.size.y):
             prev_color = ''
             stream.write(self.term.csi('el'))
@@ -898,7 +866,7 @@ class HorizontalBarGraph(BarGraph):
                         if self.option.reverse:
                             curr_color = ramp[x]
                         else:
-                            curr_color = ramp[x - o]
+                            curr_color = ramp[x - self.offset]
                     except IndexError:
                         curr_color = self.term.csi('sgr0')
                     if not self.option.reverse and curr_color != prev_color:
@@ -949,9 +917,8 @@ class HorizontalBarGraph(BarGraph):
 
 
 class VerticalBarGraph(BarGraph):
-    '''
-    Vertical bar graph.
-    '''
+
+    """Vertical bar graph."""
 
     def __init__(self, size, option):
         super(VerticalBarGraph, self).__init__(size, option)
@@ -964,7 +931,6 @@ class VerticalBarGraph(BarGraph):
             self.blocks = V_BAR[1]
         else:
             self.blocks = V_BAR[0]
-
 
     def bar(self, size, x):
         full, frac = divmod(self.round(size * 8), 8)
@@ -1048,11 +1014,12 @@ class VerticalBarGraph(BarGraph):
 
         maximum_width = self.maximum_points
         if len(points) > maximum_width:
-            spoints = points[-self.maximum_points:]
+            points = points[-self.maximum_points:]
 
         # If the legend is enabled, and we have sufficient room to shift the
         # columns to the right, we do so.
-        elif len(points) < (maximum_width - 6) and self.option.legend and self.cycle == 0:
+        elif len(points) < (maximum_width - 6) and self.option.legend and \
+                self.cycle == 0:
             for x in range(6):
                 points.insert(0, min(points))
 
@@ -1076,13 +1043,12 @@ class VerticalBarGraph(BarGraph):
         # Plot legend, if there is sufficient space
         if self.size.y > 1 and self.option.legend:
             self.set_text(Point((0, 0)), self.human(self.maximum))
-            self.set_text(Point((0, self.size.y - 1)), self.human(self.minimum))
+            self.set_text(Point((0, self.size.y - 1)),
+                          self.human(self.minimum))
 
 
 def usage_function(parser):
-    '''
-    Shows usage and available curve functions.
-    '''
+    """Show usage and available curve functions."""
     parser.print_usage()
     print('')
     print('available functions:')
@@ -1092,10 +1058,9 @@ def usage_function(parser):
 
     return 0
 
+
 def usage_palette(parser):
-    '''
-    Shows usage and available palettes.
-    '''
+    """Show usage and available palettes."""
     parser.print_usage()
     print('')
     print('available palettes:')
@@ -1104,20 +1069,19 @@ def usage_palette(parser):
 
     return 0
 
+
 def run():
-    '''
-    Main entrypoint if invoked via the command line.
-    '''
+    """Main entrypoint if invoked via the command line."""
     import argparse
 
     parser = argparse.ArgumentParser(
         description=(
             'Text mode diagrams using UTF-8 characters and fancy colors.'
         ),
-        epilog='''
+        epilog="""
     (1): only works for the horizontal bar graph, the first argument is the key
     and the second value is the data point.
-''',
+""",
     )
 
     group = parser.add_argument_group('optional drawing mode')
@@ -1270,3 +1234,5 @@ def run():
 
 if __name__ == '__main__':
     sys.exit(run())
+
+# pylint: disable=C0102
