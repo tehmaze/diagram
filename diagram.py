@@ -115,7 +115,7 @@ class Terminal(object):
         the selected file descriptor ``fd``.
         '''
         try:
-            import fcntl, termios, struct, os
+            import fcntl, termios, struct
             return struct.unpack(
                 'hh',
                 fcntl.ioctl(fd, termios.TIOCGWINSZ, '1234')
@@ -386,6 +386,9 @@ class Graph(object):
         self.lines = 0
         self.term = Terminal()
 
+        # Override in subclasses
+        self.screen = None
+
     def consume(self, istream, ostream, batch=False):
         points = []  # Data points
         values = []  # Legend values
@@ -435,6 +438,10 @@ class Graph(object):
             return float(data[0]), None
         else:
             return float(data[0]), data[1].strip()
+
+    @property
+    def scale(self):
+        return 1
 
     def update(self, points, values=None):
         self.values = values or [None] * len(points)
@@ -730,7 +737,7 @@ class AxisGraph(Graph):
         else:
             del self.screen[(x, y)]
 
-        if not self.canvas.get(y):
+        if not self.screen.canvas.get(y):
             del self.screen[y]
 
     def update(self, points, values=None):
@@ -769,7 +776,7 @@ class HorizontalBarGraph(BarGraph):
     '''
 
     def __init__(self, size, option):
-        super(BarGraph, self).__init__(size, option)
+        super(HorizontalBarGraph, self).__init__(size, option)
 
         if size.y:
             warnings.warn('Ignoring height on horizontal bar graph')
@@ -844,7 +851,7 @@ class HorizontalBarGraph(BarGraph):
             return size
 
     def render(self, stream):
-        encoding = self.option.encoding or self.term.encoding()
+        encoding = self.option.encoding or self.term.encoding
 
         if self.option.color:
             ramp = self.color_ramp(self.scale)
@@ -947,7 +954,7 @@ class VerticalBarGraph(BarGraph):
     '''
 
     def __init__(self, size, option):
-        super(BarGraph, self).__init__(size, option)
+        super(VerticalBarGraph, self).__init__(size, option)
 
         if size.x:
             warnings.warn('Ignoring width on vertical bar graph')
@@ -985,7 +992,7 @@ class VerticalBarGraph(BarGraph):
         return float(self.screen.height)
 
     def render(self, stream):
-        encoding = self.option.encoding or self.term.encoding()
+        encoding = self.option.encoding or self.term.encoding
 
         if self.option.color:
             ramp = self.color_ramp(self.size.y)
@@ -1041,7 +1048,7 @@ class VerticalBarGraph(BarGraph):
 
         maximum_width = self.maximum_points
         if len(points) > maximum_width:
-            spoints = points[-maximum_points:]
+            spoints = points[-self.maximum_points:]
 
         # If the legend is enabled, and we have sufficient room to shift the
         # columns to the right, we do so.
