@@ -855,8 +855,7 @@ class HorizontalBarGraph(BarGraph):
             minimum_text = self.human(self.minimum)
             maximum_text = self.human(self.maximum)
             minimum_text = minimum_text.ljust(self.scale - len(maximum_text))
-            current_text = self.human(self.current)
-
+            
             padding_text = ''
             if not self.option.reverse:
                 padding_text = ' ' * offset
