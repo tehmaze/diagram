@@ -10,6 +10,6 @@ script:
   - ./bin/random 100 | python diagram.py
   - ./bin/random 100 | python diagram.py -H
   - ./bin/random 100 | python diagram.py -V
-  - ./bin/random-batch 10 | head -n 1000 | python diagram.py -b
-  - ./bin/random-batch 10 | head -n 1000 | python diagram.py -b -H
-  - ./bin/random-batch 10 | head -n 1000 | python diagram.py -b -V
+  - ./bin/random-batch 2> /dev/null | head -n 1000 | python diagram.py -b
+  - ./bin/random-batch 2> /dev/null | head -n 1000 | python diagram.py -b -H
+  - ./bin/random-batch 2> /dev/null | head -n 1000 | python diagram.py -b -V
