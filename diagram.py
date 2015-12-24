@@ -142,6 +142,8 @@ class Terminal(object):
 
     def csi_wrap(self, value, capname, *args):
         """Return a value wrapped in the selected CSI and does a reset."""
+        if isinstance(value, str):
+            value = value.encode('utf-8')
         return b''.join([
             self.csi(capname, *args),
             value,
@@ -854,7 +856,7 @@ class HorizontalBarGraph(BarGraph):
                 ''.join([padding_text, minimum_text, maximum_text]),
                 'bold',
             ))
-            stream.write('\n')
+            stream.write(b'\n')
             lines += 1
 
         for y in range(self.screen.size.y):
@@ -892,11 +894,11 @@ class HorizontalBarGraph(BarGraph):
                         if self.option.reverse:
                             stream.write(self.term.csi('rev'))
                 else:
-                    stream.write(' ')
+                    stream.write(b' ')
 
             if ramp:
                 stream.write(self.term.csi('sgr0'))
-            stream.write('\n')
+            stream.write(b'\n')
             lines += 1
 
         self.cycle = self.cycle + 1
