@@ -2,6 +2,13 @@
 
 Text mode diagrams using UTF-8 characters and fancy colors (using Python).
 
+[![Build Status][cib]][ci] [![Code Health][lsb]][ls]
+
+[ci]: https://travis-ci.org/tehmaze/diagram
+[cib]: https://travis-ci.org/tehmaze/diagram.svg
+[ls]: https://landscape.io/github/tehmaze/diagram/issue/9/custom_colors
+[lsb]: https://landscape.io/github/tehmaze/diagram/issue/9/custom_colors/landscape.svg?style=flat
+
 ## Features
 
  * Axial graphs
