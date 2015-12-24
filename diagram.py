@@ -379,6 +379,8 @@ class Graph(object):
                     if select.select([fd], [], [], sleep):
                         try:
                             line = istream.readline()
+                            if line == '':
+                                break
                             point, value = self.consume_line(line)
                         except ValueError:
                             continue
