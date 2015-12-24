@@ -824,7 +824,7 @@ class HorizontalBarGraph(BarGraph):
     def offset(self):
         try:
             return max(map(len, (v for v in self.values if v)))
-        except ValueError:
+        except (ValueError, TypeError):
             return 0
 
     @property
@@ -855,6 +855,7 @@ class HorizontalBarGraph(BarGraph):
             minimum_text = self.human(self.minimum)
             maximum_text = self.human(self.maximum)
             minimum_text = minimum_text.ljust(self.scale - len(maximum_text))
+            current_text = self.human(self.current)
 
             padding_text = ''
             if not self.option.reverse:
