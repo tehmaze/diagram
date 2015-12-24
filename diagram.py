@@ -1157,6 +1157,11 @@ def run():
         help='palette name, use "help" for a list',
     )
     group.add_argument(
+        '-P', '--palette-colors',
+        default=None, metavar='colors',
+        help='palette colors (comma separated ANSI SGR codes)',
+    )
+    group.add_argument(
         '-x', '--width',
         default=0, type=int, metavar='characters',
         help='drawing width (default: auto)',
@@ -1211,6 +1216,16 @@ def run():
 
     if option.palette == 'help':
         return usage_palette(parser)
+
+    if option.palette_colors:
+        colors = []
+        for color in option.palette_colors.split(','):
+            colors.append(int(color.strip()))
+        PALETTE['custom'] = {
+            0x010: colors,
+            0x100: colors,
+        }
+        option.palette = 'custom'
 
     option.mode = option.mode or 'g'
     option.size = Point((option.width, option.height))
