@@ -7,7 +7,7 @@ def read(filename):
 
 setup(
     name='diagram',
-    version='0.2.24',
+    version='0.2.25',
     description='Text mode diagrams using UTF-8 characters and fancy colors',
     long_description=read('README.md'),
     url='https://github.com/tehmaze/diagram',
