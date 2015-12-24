@@ -1,0 +1,15 @@
+language: python
+
+python:
+  - 2.6
+  - 2.7
+  - 3.4
+  - 3.5
+
+script:
+  - ./bin/random 100 | python diagram.py
+  - ./bin/random 100 | python diagram.py -H
+  - ./bin/random 100 | python diagram.py -V
+  - ./bin/random-batch 10 | head 1000 | python diagram.py -b
+  - ./bin/random-batch 10 | head 1000 | python diagram.py -b -H
+  - ./bin/random-batch 10 | head 1000 | python diagram.py -b -V
