@@ -362,6 +362,10 @@ class Graph(object):
         # Override in subclasses
         self.screen = None
 
+        self.minimum = 0
+        self.maximum = 0
+        self.current = 0
+
     def consume(self, istream, ostream, batch=False):
         """Read points from istream and output to ostream."""
         points = []  # Data points
@@ -430,11 +434,13 @@ class Graph(object):
             self.points = points
             self.minimum = min(self.points)
             self.maximum = max(self.points)
+            self.current = self.points[-1]
 
         else:
             self.points = self.apply_function(points)
             self.minimum = np.min(self.points)
             self.maximum = np.max(self.points)
+            self.current = self.points[-1]
 
         if self.maximum == self.minimum:
             self.extents = 1
@@ -736,6 +742,8 @@ class AxisGraph(Graph):
             self.set_text(Point((0, 0)), self.human(self.maximum))
             self.set_text(Point((0, self.size.y - 1)),
                           self.human(self.minimum))
+            current = self.human(self.current)
+            self.set_text(Point((self.size.x - len(current) -1, 0)), current)
 
 
 class BarGraph(Graph):
