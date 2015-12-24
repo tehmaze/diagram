@@ -742,8 +742,9 @@ class AxisGraph(Graph):
             self.set_text(Point((0, 0)), self.human(self.maximum))
             self.set_text(Point((0, self.size.y - 1)),
                           self.human(self.minimum))
-            current = self.human(self.current)
-            self.set_text(Point((self.size.x - len(current) -1, 0)), current)
+            if self.option.batch:
+                current = self.human(self.current)
+                self.set_text(Point((self.size.x - len(current), 0)), current)
 
 
 class BarGraph(Graph):
@@ -855,7 +856,7 @@ class HorizontalBarGraph(BarGraph):
             minimum_text = self.human(self.minimum)
             maximum_text = self.human(self.maximum)
             minimum_text = minimum_text.ljust(self.scale - len(maximum_text))
-            
+
             padding_text = ''
             if not self.option.reverse:
                 padding_text = ' ' * offset
@@ -1008,11 +1009,11 @@ class VerticalBarGraph(BarGraph):
                             stream.write(ramp[y])
 
                 else:
-                    stream.write(' ')
+                    stream.write(b' ')
 
             if ramp:
                 stream.write(self.term.csi('sgr0'))
-            stream.write('\n')
+            stream.write(b'\n')
             lines += 1
 
         self.cycle = self.cycle + 1
@@ -1055,6 +1056,9 @@ class VerticalBarGraph(BarGraph):
             self.set_text(Point((0, 0)), self.human(self.maximum))
             self.set_text(Point((0, self.size.y - 1)),
                           self.human(self.minimum))
+            if self.option.batch:
+                current = self.human(self.current)
+                self.set_text(Point((self.size.x - len(current), 0)), current)
 
 
 def usage_function(parser):
