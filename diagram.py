@@ -1247,6 +1247,7 @@ def run():
 
     engine.consume(istream, ostream, batch=option.batch)
 
+
 class DOption(object):
     """ Placeholder class for diagram options.
     """

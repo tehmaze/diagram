@@ -7,7 +7,7 @@ from diagram import DGWrapper
 # Create a simple ramp of data
 points = []
 values = []
-for item in range(10):
+for item in range(20):
     points.append(float(item))
     values.append(None)
 
