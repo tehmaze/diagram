@@ -1,0 +1,15 @@
+#!/usr/bin/env python2
+#
+# Demo script for using the awesome diagram as a library
+
+from diagram import DGWrapper
+
+# Create a simple ramp of data
+points = []
+values = []
+for item in range(10):
+    points.append(float(item))
+    values.append(None)
+
+gram = DGWrapper(data=[points, values])
+gram.show()
