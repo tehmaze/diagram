@@ -147,3 +147,9 @@ Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
 #### blue
 
 ![Palette Blue](doc/palette-blue.png)
+
+## Library Usage
+
+    from diagram import DGWrapper
+    gram = DGWrapper(data=[points, values])
+    gram.show()
