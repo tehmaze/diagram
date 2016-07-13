@@ -1264,6 +1264,8 @@ class DOption(object):
         self.palette = 'default'
         self.size = Point([self.width, self.height])
         self.mode = 'v'
+        self.axis = True
+        self.keys = False
 
         # Make graph look 'ok' instead of crashing on MS windows
         import platform
@@ -1295,8 +1297,18 @@ class DGWrapper(object):
             except AttributeError:
                 self.ostream = sys.stdout
 
-        # Vertical only for now
-        self.dg = VerticalBarGraph(self.dg_option.size, self.dg_option)
+
+        if self.dg_option.mode == 'h':
+            self.dg = HorizontalBarGraph(self.dg_option.size,
+                                       self.dg_option)
+
+        elif self.dg_option.mode == 'v':
+            self.dg = VerticalBarGraph(self.dg_option.size,
+                                       self.dg_option)
+
+        else:
+            self.dg = AxisGraph(self.dg_option.size,
+                            self.dg_option)
 
         # off-screen render the graph with points, values
         self.dg.update(data[0], data[1])
