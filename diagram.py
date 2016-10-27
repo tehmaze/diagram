@@ -601,7 +601,7 @@ class AxisGraph(Graph):
 
     def render(self, stream):
         """Render graph to stream."""
-        encoding = self.option.encoding or self.term.encoding
+        encoding = self.option.encoding or self.term.encoding or "utf8"
 
         if self.option.color:
             ramp = self.color_ramp(self.size.y)[::-1]
@@ -839,7 +839,7 @@ class HorizontalBarGraph(BarGraph):
             return size
 
     def render(self, stream):
-        encoding = self.option.encoding or self.term.encoding
+        encoding = self.option.encoding or self.term.encoding or "utf8"
 
         if self.option.color:
             ramp = self.color_ramp(self.scale)
@@ -971,7 +971,7 @@ class VerticalBarGraph(BarGraph):
         return float(self.screen.height)
 
     def render(self, stream):
-        encoding = self.option.encoding or self.term.encoding
+        encoding = self.option.encoding or self.term.encoding or "utf8"
 
         if self.option.color:
             ramp = self.color_ramp(self.size.y)
