@@ -19,6 +19,10 @@ Text mode diagrams using UTF-8 characters and fancy colors (using Python).
 
 ## Installation
 
+### System requirements for Fedora Core 24:
+
+    dnf install ncurses-devel ncurses-compat-libs
+
 It's recommended to use pip to install/update.
 
 To install:
