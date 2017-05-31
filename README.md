@@ -19,6 +19,10 @@ Text mode diagrams using UTF-8 characters and fancy colors (using Python).
 
 ## Installation
 
+### System requirements for Fedora Core 24:
+
+    dnf install ncurses-devel ncurses-compat-libs
+
 It's recommended to use pip to install/update.
 
 To install:
@@ -147,3 +151,9 @@ Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
 #### blue
 
 ![Palette Blue](doc/palette-blue.png)
+
+## Library Usage
+
+    from diagram import DGWrapper
+    gram = DGWrapper(data=[points, values])
+    gram.show()

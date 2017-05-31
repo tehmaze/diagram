@@ -1248,6 +1248,77 @@ def run():
     engine.consume(istream, ostream, batch=option.batch)
 
 
+class DOption(object):
+    """ Placeholder class for diagram options.
+    """
+
+    def __init__(self):
+        self.width = 0
+        self.height = 0
+        self.reverse = False
+        self.function = None
+        self.batch = False
+        self.legend = True
+        self.encoding = ''
+        self.color = True
+        self.palette = 'default'
+        self.size = Point([self.width, self.height])
+        self.mode = 'v'
+        self.axis = True
+        self.keys = False
+
+        # Make graph look 'ok' instead of crashing on MS windows
+        import platform
+        if 'Windows' in platform.platform():
+            self.encoding = 'utf-8'
+
+
+class DGWrapper(object):
+    """ Wrapper around a bar graph from the awesome diagram pacakge.
+    """
+
+    def __init__(self, dg_option=None, ostream=None, data=None):
+        """ Handle some of the setup functions for the graph in the
+        diagram package. Specifically hide all of the requirements that
+        are computed in run() inside diagram.py.
+        """
+
+        # Create a pre-populated object similar to the results of
+        # argparse
+        self.dg_option = dg_option
+        if self.dg_option == None:
+            self.dg_option = DOption()
+
+        # handle buffered and non buffered input gracefully.
+        self.ostream = ostream
+        if self.ostream == None:
+            try:
+                self.ostream = sys.stdout.buffer
+            except AttributeError:
+                self.ostream = sys.stdout
+
+
+        if self.dg_option.mode == 'h':
+            self.dg = HorizontalBarGraph(self.dg_option.size,
+                                       self.dg_option)
+
+        elif self.dg_option.mode == 'v':
+            self.dg = VerticalBarGraph(self.dg_option.size,
+                                       self.dg_option)
+
+        else:
+            self.dg = AxisGraph(self.dg_option.size,
+                            self.dg_option)
+
+        # off-screen render the graph with points, values
+        self.dg.update(data[0], data[1])
+
+    def show(self):
+        """ Actually show the graph on screen.
+        """
+        self.dg.render(self.ostream)
+
+
 if __name__ == '__main__':
     sys.exit(run())
 
