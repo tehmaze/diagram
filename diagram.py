@@ -10,6 +10,7 @@ __license__ = 'MIT'
 
 
 from collections import defaultdict
+from operator import itemgetter
 import curses
 import locale
 import math
@@ -368,8 +369,7 @@ class Graph(object):
 
     def consume(self, istream, ostream, batch=False):
         """Read points from istream and output to ostream."""
-        points = []  # Data points
-        values = []  # Legend values
+        datapoints = []  # List of 2-tuples
 
         if batch:
             sleep = max(0.01, self.option.sleep)
@@ -381,18 +381,16 @@ class Graph(object):
                             line = istream.readline()
                             if line == '':
                                 break
-                            point, value = self.consume_line(line)
+                            datapoints.append(self.consume_line(line))
                         except ValueError:
                             continue
-                        else:
-                            points.append(point)
-                            values.append(value)
 
-                        if len(points) > 1:
-                            maximum_points = self.maximum_points
-                            points = points[-maximum_points:]
-                            values = points[-maximum_points:]
-                            self.update(points, values)
+                        if self.option.sort_by_column:
+                            datapoints = sorted(datapoints, key=itemgetter(self.option.sort_by_column - 1))
+
+                        if len(datapoints) > 1:
+                            datapoints = datapoints[-self.maximum_points:]
+                            self.update([dp[0] for dp in datapoints], [dp[1] for dp in datapoints])
                             self.render(ostream)
 
                         time.sleep(sleep)
@@ -403,14 +401,14 @@ class Graph(object):
         else:
             for line in istream:
                 try:
-                    point, value = self.consume_line(line)
+                    datapoints.append(self.consume_line(line))
                 except ValueError:
                     pass
-                else:
-                    points.append(point)
-                    values.append(value)
 
-            self.update(points, values)
+            if self.option.sort_by_column:
+                datapoints = sorted(datapoints, key=itemgetter(self.option.sort_by_column - 1))
+
+            self.update([dp[0] for dp in datapoints], [dp[1] for dp in datapoints])
             self.render(ostream)
 
     def consume_line(self, line):
@@ -1172,6 +1170,11 @@ def run():
         '-r', '--reverse',
         default=False, action='store_true',
         help='reverse draw graph',
+    )
+    group.add_argument(
+        '--sort-by-column',
+        default=0, type=int, metavar='index',
+        help='sort input data based on given column',
     )
 
     group = parser.add_argument_group('optional input and output arguments')
