@@ -18,7 +18,7 @@ Features
 
 setup(
     name='diagram',
-    version='0.2.25',
+    version='0.2.26',
     description='Text mode diagrams using UTF-8 characters and fancy colors',
     long_description=LONG_DESCRIPTION,
     url='https://github.com/tehmaze/diagram',
