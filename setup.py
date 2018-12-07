@@ -1,11 +1,8 @@
-#from distutils.core import setup
 from setuptools import setup
 import os
 
-def read(filename):
-    return open(filename).read()
 
-long_description = '''
+LONG_DESCRIPTION = '''
 Text mode diagrams using UTF-8 characters and fancy colors (using Python).
 
 Features
@@ -16,11 +13,12 @@ Features
  * UTF-8 text graphics
 '''.strip()
 
+
 setup(
     name='diagram',
     version='0.2.25',
     description='Text mode diagrams using UTF-8 characters and fancy colors',
-    long_description=long_description,
+    long_description=LONG_DESCRIPTION,
     url='https://github.com/tehmaze/diagram',
     author='Wijnand Modderman-Lenstra',
     author_email='maze@pyth0n.org',
