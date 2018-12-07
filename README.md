@@ -43,11 +43,11 @@ Pictures say more than a thousand words.
 
 ### Axis graph
 
-![Axis Graph](doc/axisgraph.png)
+![Axis Graph](https://github.com/tehmaze/diagram/raw/master/doc/axisgraph.png)
 
 ### Horizontal bar graph
 
-![Horizontal bar graph](doc/horizontalbar.png)
+![Horizontal bar graph](https://github.com/tehmaze/diagram/raw/master/doc/horizontalbar.png)
 
 Drawing characters used:
 
@@ -55,7 +55,7 @@ Drawing characters used:
 
 ### Vertical bar graph
 
-![Vertical bar graph](doc/verticalbar.png)
+![Vertical bar graph](https://github.com/tehmaze/diagram/raw/master/doc/verticalbar.png)
 
 Drawing characters used:
 
@@ -134,23 +134,23 @@ Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
 
 #### default / spectrum
 
-![Palette Spectrum](doc/palette-spectrum.png)
+![Palette Spectrum](https://github.com/tehmaze/diagram/raw/master/doc/palette-spectrum.png)
 
 #### grey
 
-![Palette Grey](doc/palette-grey.png)
+![Palette Grey](https://github.com/tehmaze/diagram/raw/master/doc/palette-grey.png)
 
 #### red
 
-![Palette Red](doc/palette-red.png)
+![Palette Red](https://github.com/tehmaze/diagram/raw/master/doc/palette-red.png)
 
 #### green
 
-![Palette Green](doc/palette-green.png)
+![Palette Green](https://github.com/tehmaze/diagram/raw/master/doc/palette-green.png)
 
 #### blue
 
-![Palette Blue](doc/palette-blue.png)
+![Palette Blue](https://github.com/tehmaze/diagram/raw/master/doc/palette-blue.png)
 
 ## Library Usage
 
