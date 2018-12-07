@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+
+
 """Text mode diagrams using UTF-8 characters and fancy colors."""
 
 from __future__ import print_function
