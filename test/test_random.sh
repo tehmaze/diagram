@@ -11,6 +11,7 @@ cd $(dirname "${BASH_SOURCE[0]}")/..
 ./bin/random 100 | python diagram.py -bH
 ./bin/random 100 | python diagram.py -bV
 
-echo -e '1\n2\n3\n2' | diagram -H > output
+echo -e '1\n2\n3\n2' | python diagram.py -H > output.$$
+trap "rm output.$$" EXIT
 # We check that the number of lines in the output is [input size] + 1
-[ $(wc -l output | cut -d' ' -f1) -eq 5 ] || exit 1
+[ $(wc -l output.$$ | awk '{print $1}') -eq 5 ] || exit 1
