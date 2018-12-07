@@ -317,9 +317,9 @@ class Screen(object):
         if not isinstance(point, Point):
             point = Point(point)
 
-        if point.y > self.size.y:
+        if point.y >= self.size.y:
             if self.extend_y:
-                self.size.y = point.y
+                self.size.y = point.y + 1
             else:
                 raise OverflowError('%r overflow y = %d > %d' % (
                     self,
@@ -327,9 +327,9 @@ class Screen(object):
                     self.size.y,
                 ))
 
-        if point.x > self.size.x:
+        if point.x >= self.size.x:
             if self.extend_x:
-                self.size.x = point.x
+                self.size.x = point.x + 1
             else:
                 raise OverflowError('%r overflow x = %d > %d' % (
                     self,
@@ -788,29 +788,21 @@ class HorizontalBarGraph(BarGraph):
     def bar(self, size, y):
         full, frac = divmod(self.round(size * 8), 8)
 
-        x = 0
-        o = self.offset
+        xr = lambda x: x + self.offset
         if self.option.reverse:
-            for x in range(full):
-                xr = self.screen.size.x - x - o
-                self.screen[(xr, y)] = self.blocks[-1]
-            if frac:
-                x = x + 1 if x else x
-                xr = self.screen.size.x - x - o
-                self.screen[(xr, y)] = self.blocks[frac]
-        else:
-            for x in range(full):
-                xr = x + o
-                self.screen[(xr, y)] = self.blocks[-1]
-            if frac:
-                x = x + 1 if x else x
-                xr = x + o
-                self.screen[(xr, y)] = self.blocks[frac]
+            xr = lambda x: self.screen.size.x - x - self.offset
+
+        x = 0
+        for x in range(full):
+            self.screen[(xr(x), y)] = self.blocks[-1]
+        if frac:
+            x = x + 1 if x else x
+            self.screen[(xr(x), y)] = self.blocks[frac]
 
         if self.option.keys and self.values[y] is not None:
             value = self.values[y]
             if self.option.reverse:
-                point = Point((self.size.x - o, y))
+                point = Point((self.size.x - self.offset, y))
                 value = value.ljust(self.offset)
             else:
                 point = Point((0, y))
@@ -947,20 +939,16 @@ class VerticalBarGraph(BarGraph):
 
     def bar(self, size, x):
         full, frac = divmod(self.round(size * 8), 8)
-
-        y = 0
+        y_range = range(full)
+        yr = lambda y: y + 1 if y else y
         if self.option.reverse:
-            for y in range(full):
-                self.screen[(x, y)] = self.blocks[-1]
-            if frac:
-                y = y + 1 if y else y
-                self.screen[(x, y)] = self.blocks[-frac]
-        else:
-            for y in range(self.size.y, self.size.y - full - 1, -1):
-                self.screen[(x, y)] = self.blocks[-1]
-            if frac:
-                y = self.size.y - full - 1
-                self.screen[(x, y)] = self.blocks[frac]
+            y_range = range(self.size.y, self.size.y - full - 1, -1)
+            yr = lambda y: self.size.y - full - 1
+        y = 0
+        for y in y_range:
+            self.screen[(x, y)] = self.blocks[-1]
+        if frac:
+            self.screen[(x, yr(y))] = self.blocks[-frac]
 
     @property
     def maximum_points(self):
@@ -1094,9 +1082,12 @@ def run():
         description=(
             'Text mode diagrams using UTF-8 characters and fancy colors.'
         ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-    (1): only works for the horizontal bar graph, the first argument is the key
-    and the second value is the data point.
+(1): only works for horizontal & vertical bar graphs.
+
+(2): only works for the horizontal bar graph: the first argument is
+the datapoint value, and the second value is its abscissa.
 """,
     )
 
@@ -1171,7 +1162,7 @@ def run():
     group.add_argument(
         '-r', '--reverse',
         default=False, action='store_true',
-        help='reverse draw graph',
+        help='reverse draw graph (1)',
     )
 
     group = parser.add_argument_group('optional input and output arguments')
@@ -1183,7 +1174,7 @@ def run():
     group.add_argument(
         '-k', '--keys',
         default=False, action='store_true',
-        help='input are key-value pairs (default: no) (1)',
+        help='input are key-value pairs (default: no) (2)',
     )
     group.add_argument(
         '-s', '--sleep',
