@@ -11,7 +11,7 @@ def read(name):
 
 setup(
     name='diagram',
-    version='0.2.27',
+    version='0.2.28',
     description='Text mode diagrams using UTF-8 characters and fancy colors',
     long_description=read('README.md'),
     long_description_content_type='text/markdown',
