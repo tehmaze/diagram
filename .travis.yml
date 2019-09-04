@@ -1,15 +1,9 @@
 language: python
 
 python:
-  - 2.6
   - 2.7
-  - 3.4
   - 3.5
+  - 3.6
+  - 3.7
 
-script:
-  - ./bin/random 100 | python diagram.py
-  - ./bin/random 100 | python diagram.py -H
-  - ./bin/random 100 | python diagram.py -V
-  - ./bin/random 100 | python diagram.py -b
-  - ./bin/random 100 | python diagram.py -bH
-  - ./bin/random 100 | python diagram.py -bV
+script: test/test_random.sh
