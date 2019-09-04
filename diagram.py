@@ -652,15 +652,15 @@ class AxisGraph(Graph):
         self.lines = lines
 
     @property
-    def normalized(self):
-        """normalized data points."""
+    def normalised(self):
+        """Normalised data points."""
         if np is None:
-            return self._normalized_python()
+            return self._normalised_python()
         else:
-            return self._normalized_numpy()
+            return self._normalised_numpy()
 
-    def _normalized_numpy(self):
-        """normalized data points using numpy."""
+    def _normalised_numpy(self):
+        """Normalised data points using numpy."""
         dx = (self.screen.width / float(len(self.points)))
         oy = (self.screen.height)
         points = np.array(self.points) - self.minimum
@@ -671,8 +671,8 @@ class AxisGraph(Graph):
                 min(oy, oy - y),
             ))
 
-    def _normalized_python(self):
-        """normalized data points using pure Python."""
+    def _normalised_python(self):
+        """Normalised data points using pure Python."""
         dx = (self.screen.width / float(len(self.points)))
         oy = (self.screen.height)
         for x, point in enumerate(self.points):
@@ -734,7 +734,7 @@ class AxisGraph(Graph):
 
         # Plot lines between the points
         prev = Point((0, self.null))
-        for curr in self.normalized:
+        for curr in self.normalised:
             for point in self.line(prev, curr):
                 self.set(point)
             prev = curr
@@ -755,7 +755,7 @@ class BarGraph(Graph):
     """Base class for bar graphs."""
 
     @property
-    def normalized(self):
+    def normalised(self):
         for point in self.points:
             yield (point - self.minimum) / self.extents * float(self.scale)
 
@@ -918,7 +918,7 @@ class HorizontalBarGraph(BarGraph):
         )
 
         # Plot bars for each line
-        for y, size in enumerate(self.normalized):
+        for y, size in enumerate(self.normalised):
             self.bar(size, y)
 
 
@@ -1039,7 +1039,7 @@ class VerticalBarGraph(BarGraph):
         )
 
         # Plot bars for each line
-        for x, size in enumerate(self.normalized):
+        for x, size in enumerate(self.normalised):
             self.bar(size, x)
 
         # Plot legend, if there is sufficient space
