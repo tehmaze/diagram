@@ -435,14 +435,14 @@ class Graph(object):
             if self.option.function:
                 warnings.warn('numpy not available, function ignored')
             self.points = points
-            self.minimum = min(self.points)
-            self.maximum = max(self.points)
+            self.minimum = min(self.points) if self.option.y_axis is None else min(self.option.y_axis)
+            self.maximum = max(self.points) if self.option.y_axis is None else max(self.option.y_axis)
             self.current = self.points[-1]
 
         else:
             self.points = self.apply_function(points)
-            self.minimum = np.min(self.points)
-            self.maximum = np.max(self.points)
+            self.minimum = np.min(self.points) if self.option.y_axis is None else min(self.option.y_axis)
+            self.maximum = np.max(self.points) if self.option.y_axis is None else max(self.option.y_axis)
             self.current = self.points[-1]
 
         if self.maximum == self.minimum:
@@ -1159,6 +1159,11 @@ the datapoint value, and the second value is its abscissa.
         '-y', '--height',
         default=0, type=int, metavar='characters',
         help='drawing height (default: auto)',
+    )
+    group.add_argument(
+        '-Y', '--y-axis',
+        default=None, nargs="+", type=int,
+        help='drawing y axis values (default: auto)',
     )
     group.add_argument(
         '-r', '--reverse',
