@@ -8,6 +8,7 @@ cd $(dirname "${BASH_SOURCE[0]}")/..
 ./bin/random 100 | python diagram.py -H
 ./bin/random 100 | python diagram.py -V
 ./bin/random 100 | python diagram.py -b
+./bin/random 100 | python diagram.py -Y -25000 25000
 ./bin/random 100 | python diagram.py -bH
 ./bin/random 100 | python diagram.py -bV
 
