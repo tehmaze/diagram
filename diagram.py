@@ -797,7 +797,7 @@ class HorizontalBarGraph(BarGraph):
         for x in range(full):
             self.screen[(xr(x), y)] = self.blocks[-1]
         if frac:
-            x = x + 1 if x else x
+            x = x + 1 if full else x
             self.screen[(xr(x), y)] = self.blocks[frac]
 
         if self.option.keys and self.values[y] is not None:
