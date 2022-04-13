@@ -1268,6 +1268,7 @@ class DOption(object):
         self.mode = 'v'
         self.axis = True
         self.keys = False
+        self.y_axis = None
 
         # Make graph look 'ok' instead of crashing on MS windows
         import platform
